@@ -1,0 +1,66 @@
+# ============================================
+# Python
+# ============================================
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# ============================================
+# Environment variables / secrets
+# ============================================
+.env
+.env.*
+!.env.example
+
+# ============================================
+# IDE / editors
+# ============================================
+.vscode/
+.idea/
+
+# ============================================
+# OS
+# ============================================
+.DS_Store
+Thumbs.db
+
+# ============================================
+# Data
+# Data will later be versioned with DVC
+# ============================================
+data/raw/*
+!data/raw/.gitkeep
+
+data/parquet/*
+!data/parquet/.gitkeep
+
+data/processed/*
+!data/processed/.gitkeep
+
+data/prod/*
+!data/prod/.gitkeep
+
+data/models/*
+!data/models/.gitkeep
+
+# ============================================
+# Python tooling / tests
+# ============================================
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# ============================================
+# Logs
+# ============================================
+*.log
+logs/
