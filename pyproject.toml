@@ -12,6 +12,7 @@ dependencies = [
     "pandas",
     "pyarrow",
     "requests",
+    "scikit-learn",
 ]
 
 [tool.setuptools.packages.find]
