@@ -1,0 +1,16 @@
+.git
+.venv
+__pycache__
+*.pyc
+.pytest_cache
+.mypy_cache
+.ruff_cache
+
+.env
+
+data/raw
+data/parquet
+data/processed
+data/prod
+
+notebooks
