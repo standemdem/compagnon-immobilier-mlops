@@ -13,6 +13,10 @@ dependencies = [
     "pyarrow",
     "requests",
     "scikit-learn",
+    "pydantic",
+    "fastapi",
+    "python-dotenv",
+    "uvicorn",
 ]
 
 [tool.setuptools.packages.find]
