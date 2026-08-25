@@ -578,19 +578,383 @@ Objectifs :
 - stocker les données sur un remote externe ;
 - permettre la récupération des données avec `dvc pull`.
 
-Remote envisagé :
+Les fichiers de données et les artefacts ML volumineux ne sont pas stockés directement dans Git.
+
+Le projet utilise **DVC — Data Version Control** afin de versionner :
+
+* les données sources DVF ;
+* les artefacts du modèle entraîné.
+
+Git conserve uniquement les fichiers de métadonnées DVC, tandis que les fichiers réels sont stockés sur un remote Google Drive.
+
+### Organisation actuelle
 
 ```text
-Google Drive / OneDrive
+GitHub
+├── code Python
+├── configuration DVC
+├── data/raw.dvc
+└── data/models.dvc
+
+Google Drive
+├── données DVF sources
+└── modèles entraînés
 ```
 
-Statut :
+Les dossiers actuellement suivis par DVC sont :
 
 ```text
-🚧 À intégrer
+data/raw/
+data/models/
+```
+
+Les dossiers intermédiaires :
+
+```text
+data/parquet/
+data/processed/
+data/prod/
+```
+
+ne sont pas versionnés avec DVC pour le moment, car ils peuvent être reconstruits à partir des données sources et des scripts du projet.
+
+---
+
+### Installation
+
+Le support DVC Google Drive est déclaré dans les dépendances du projet.
+
+Après création et activation de l'environnement virtuel :
+
+```bash
+pip install -e .
+```
+
+Vérifier l'installation :
+
+```bash
+dvc --version
 ```
 
 ---
+### ⚠️ Compatibilité des dépendances Google Drive
+
+L'intégration DVC avec Google Drive repose notamment sur :
+
+```text
+dvc-gdrive
+PyDrive2
+pyOpenSSL
+cryptography
+asyncssh
+```
+
+Dans notre environnement Python 3.12, l'installation standard peut produire un conflit de versions entre ces packages.
+
+La combinaison validée pour ce projet est :
+
+```text
+PyDrive2      1.21.3
+pyOpenSSL     24.2.1
+cryptography  43.0.3
+asyncssh      2.21.1
+dvc-gdrive    3.0.1
+```
+
+Après l'installation normale du projet :
+
+```bash
+pip install -e .
+```
+
+forcer les versions compatibles avec :
+
+```bash
+python -m pip install --force-reinstall \
+  "PyDrive2==1.21.3" \
+  "pyOpenSSL==24.2.1" \
+  "cryptography==43.0.3" \
+  "asyncssh==2.21.1"
+```
+
+Puis vérifier qu'aucune dépendance n'est cassée :
+
+```bash
+python -m pip check
+```
+
+Le résultat attendu est :
+
+```text
+No broken requirements found.
+```
+
+Vérifier ensuite les versions installées :
+
+```bash
+python -m pip show \
+  PyDrive2 \
+  pyOpenSSL \
+  cryptography \
+  asyncssh \
+  dvc-gdrive
+```
+
+Cette étape est importante : certaines combinaisons plus récentes de `cryptography` sont incompatibles avec la version de `PyDrive2` utilisée par `dvc-gdrive`, ce qui peut provoquer des erreurs lors de l'authentification Google Drive.
+
+Ne pas exécuter ensuite de mise à jour isolée du type :
+
+```bash
+pip install --upgrade pyOpenSSL
+```
+
+ou :
+
+```bash
+pip install --upgrade cryptography
+```
+
+sans vérifier les contraintes de l'ensemble de la pile, car cela peut réintroduire le conflit.
+
+### Initialisation
+
+DVC est initialisé directement dans le dépôt Git :
+
+```bash
+dvc init
+```
+
+Cela crée notamment :
+
+```text
+.dvc/
+.dvcignore
+```
+
+Ces fichiers doivent être versionnés avec Git.
+
+---
+
+### Suivi des données
+
+Les données sources sont ajoutées à DVC avec :
+
+```bash
+dvc add data/raw
+```
+
+Les modèles et métadonnées du modèle sont suivis avec :
+
+```bash
+dvc add data/models
+```
+
+DVC génère alors :
+
+```text
+data/raw.dvc
+data/models.dvc
+```
+
+Ces fichiers `.dvc` doivent être commités dans Git.
+
+Les données réelles ne sont pas ajoutées à Git.
+
+---
+
+### Remote Google Drive
+
+Le projet utilise actuellement un dossier Google Drive comme remote DVC.
+
+La configuration du remote est enregistrée dans :
+
+```text
+.dvc/config
+```
+
+Le remote peut être configuré avec :
+
+```bash
+dvc remote add -d gdrive gdrive://ID_DU_DOSSIER_GOOGLE_DRIVE
+```
+
+Vérification :
+
+```bash
+dvc remote list
+```
+
+---
+
+### Authentification Google Drive
+
+L'authentification utilise un **client OAuth Google Cloud personnalisé**.
+
+Le client OAuth est configuré en mode test dans Google Cloud, avec les contributeurs du projet ajoutés comme utilisateurs test.
+
+Les identifiants OAuth doivent rester locaux et ne jamais être commités dans Git.
+
+Ils sont configurés avec :
+
+```bash
+dvc remote modify --local gdrive \
+  gdrive_client_id "CLIENT_ID"
+```
+
+puis :
+
+```bash
+dvc remote modify --local gdrive \
+  gdrive_client_secret "CLIENT_SECRET"
+```
+
+Ces valeurs sont stockées dans :
+
+```text
+.dvc/config.local
+```
+
+Ce fichier doit rester ignoré par Git.
+
+Chaque membre de l'équipe doit utiliser ses propres identifiants OAuth locaux.
+
+---
+
+### Envoyer les données vers le remote
+
+Après modification d'un dataset ou d'un modèle :
+
+```bash
+dvc add data/raw
+```
+
+ou :
+
+```bash
+dvc add data/models
+```
+
+Puis :
+
+```bash
+dvc push
+```
+
+DVC envoie uniquement les nouveaux objets ou les objets modifiés vers le remote Google Drive.
+
+Ensuite, les fichiers `.dvc` modifiés doivent être versionnés avec Git :
+
+```bash
+git add data/*.dvc
+git commit -m "Update DVC tracked artifacts"
+git push
+```
+
+---
+
+### Récupérer les données sur une nouvelle machine
+
+Après clonage du dépôt :
+
+```bash
+git clone <URL_DU_REPOSITORY>
+cd compagnon-immobilier-mlops
+```
+
+Installer le projet :
+
+```bash
+pip install -e .
+```
+
+Configurer localement les identifiants OAuth Google Drive.
+
+Puis récupérer les fichiers suivis par DVC :
+
+```bash
+dvc pull
+```
+
+DVC reconstruit alors localement :
+
+```text
+data/raw/
+data/models/
+```
+
+à partir des versions référencées dans Git.
+
+---
+
+### Travail en équipe
+
+Pour pouvoir utiliser le remote DVC, un nouveau contributeur doit disposer :
+
+1. d'un accès au dépôt GitHub ;
+2. d'un accès en écriture au dossier Google Drive utilisé comme remote ;
+3. d'un compte Google déclaré comme utilisateur test de l'application OAuth ;
+4. de ses propres identifiants OAuth configurés localement.
+
+Le workflow standard est alors :
+
+```text
+git pull
+   ↓
+dvc pull
+   ↓
+travail / génération de nouveaux artefacts
+   ↓
+dvc add
+   ↓
+dvc push
+   ↓
+git add / commit / push
+```
+
+---
+
+### Principe de versionnement
+
+DVC ne crée pas automatiquement des fichiers comme :
+
+```text
+dataset_v1.parquet
+dataset_v2.parquet
+dataset_v3.parquet
+```
+
+Le fichier conserve le même nom logique, mais chaque version est identifiée par son hash.
+
+Git conserve l'historique des métadonnées DVC.
+
+Ainsi, pour revenir à une ancienne version :
+
+```bash
+git checkout <ancien_commit>
+dvc pull
+```
+
+DVC restaure alors automatiquement la version des données correspondant à ce commit Git.
+
+---
+
+### Statut
+
+```text
+✅ DVC initialisé
+✅ data/raw suivi par DVC
+✅ data/models suivi par DVC
+✅ Remote Google Drive configuré
+✅ Authentification OAuth fonctionnelle
+✅ dvc push validé
+```
+
+La prochaine évolution prévue est d'intégrer les étapes de transformation et d'entraînement dans un `dvc.yaml` afin de pouvoir reconstruire automatiquement le pipeline avec :
+
+```bash
+dvc repro
+```
+
 
 ## ⚡ FastAPI
 
