@@ -17,6 +17,7 @@ dependencies = [
     "fastapi",
     "python-dotenv",
     "uvicorn",
+    "dvc[gdrive]",
 ]
 
 [tool.setuptools.packages.find]
