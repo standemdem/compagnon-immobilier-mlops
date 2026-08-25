@@ -1,7 +1,5 @@
 import pandas as pd
-
 from sklearn.base import BaseEstimator, TransformerMixin
-
 
 class CommuneSalesEncoder(BaseEstimator, TransformerMixin):
     """
@@ -50,3 +48,38 @@ class CommuneSalesEncoder(BaseEstimator, TransformerMixin):
         )
 
         return X_transformed
+
+class FeatureSelector(BaseEstimator, TransformerMixin):
+    """
+    Sélectionne uniquement les colonnes définies
+    lors de l'initialisation.
+    """
+
+    def __init__(self, features: list[str]):
+        self.features = features
+
+    def fit(self, X: pd.DataFrame, y=None):
+        missing_columns = (
+            set(self.features) - set(X.columns)
+        )
+
+        if missing_columns:
+            raise ValueError(
+                f"Colonnes requises manquantes : "
+                f"{sorted(missing_columns)}"
+            )
+
+        return self
+
+    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
+        missing_columns = (
+            set(self.features) - set(X.columns)
+        )
+
+        if missing_columns:
+            raise ValueError(
+                f"Colonnes requises manquantes : "
+                f"{sorted(missing_columns)}"
+            )
+
+        return X[self.features].copy()

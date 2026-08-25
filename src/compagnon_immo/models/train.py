@@ -1,5 +1,35 @@
 import pandas as pd
+import joblib
+import json
 
+from pathlib import Path
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.pipeline import Pipeline
+
+from compagnon_immo.models.transformers import (
+    CommuneSalesEncoder,
+    FeatureSelector,
+)
+
+MODEL_FEATURES = [
+    "surface_reelle_bati",
+    "nombre_pieces_principales",
+    "latitude",
+    "longitude",
+    "has_dependance",
+    "nom_commune",
+]
+
+FINAL_MODEL_FEATURES = [
+    "surface_reelle_bati",
+    "nombre_pieces_principales",
+    "latitude",
+    "longitude",
+    "has_dependance",
+    "nb_ventes_commune",
+]
+
+TARGET = "prix_m2"
 
 def temporal_train_test_split(
     df: pd.DataFrame,
@@ -97,17 +127,6 @@ def apply_target_bounds(
 
     return df_filtered
 
-MODEL_FEATURES = [
-    "surface_reelle_bati",
-    "nombre_pieces_principales",
-    "latitude",
-    "longitude",
-    "has_dependance",
-    "nom_commune",
-]
-
-TARGET = "prix_m2"
-
 
 def split_features_target(
     df: pd.DataFrame,
@@ -130,3 +149,98 @@ def split_features_target(
     y = df[TARGET].copy()
 
     return X, y
+
+
+def build_model_pipeline(
+   random_state: int = 42,
+    n_estimators: int = 100,
+    n_jobs: int = -1,
+    max_depth: int | None = None,
+    min_samples_leaf: int = 1,
+) -> Pipeline:
+    """
+    Construit le pipeline sklearn complet.
+
+    Étapes :
+    1. création de nb_ventes_commune ;
+    2. sélection des features numériques finales ;
+    3. entraînement du Random Forest.
+    """
+
+    pipeline = Pipeline(
+        steps=[
+            (
+                "commune_sales_encoder",
+                CommuneSalesEncoder(),
+            ),
+            (
+                "feature_selector",
+                FeatureSelector(
+                    features=FINAL_MODEL_FEATURES
+                ),
+            ),
+            (
+                "model",
+                RandomForestRegressor(
+                    n_estimators=n_estimators,
+                    random_state=random_state,
+                    n_jobs=n_jobs,
+                    max_depth=max_depth,
+                    min_samples_leaf=min_samples_leaf,
+                ),
+            ),
+        ]
+    )
+
+    return pipeline
+
+def save_model(
+    pipeline: Pipeline,
+    output_path: Path,
+) -> None:
+    """
+    Sauvegarde le pipeline sklearn entraîné.
+    """
+
+    output_path = Path(output_path)
+
+    output_path.parent.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    joblib.dump(
+        pipeline,
+        output_path,
+    )
+
+    print(f"Modèle sauvegardé : {output_path}")
+
+
+def save_model_metadata(
+    metadata: dict,
+    output_path: Path,
+) -> None:
+    """
+    Sauvegarde les métadonnées du modèle au format JSON.
+    """
+
+    output_path = Path(output_path)
+
+    output_path.parent.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    with output_path.open(
+        "w",
+        encoding="utf-8",
+    ) as file:
+        json.dump(
+            metadata,
+            file,
+            indent=4,
+            ensure_ascii=False,
+        )
+
+    print(f"Métadonnées sauvegardées : {output_path}")
