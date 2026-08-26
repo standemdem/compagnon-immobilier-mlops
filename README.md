@@ -2,38 +2,77 @@
 
 Pipeline MLOps de prédiction du **prix au m² des appartements en France métropolitaine** à partir des données DVF (*Demandes de valeurs foncières*).
 
-Ce projet reprend le travail exploratoire réalisé autour de **Compagnon Immobilier** afin de le transformer en une architecture industrialisable : traitement des données par scripts Python, versionnement des datasets, entraînement reproductible, API de prédiction, conteneurisation, orchestration et monitoring.
+Ce dépôt reprend le travail exploratoire du projet **Compagnon Immobilier** pour le transformer en une architecture industrialisable : préparation des données par scripts Python, entraînement reproductible, versionnement des données et modèles avec DVC, exposition du modèle via FastAPI et conteneurisation avec Docker/Nginx.
 
 > **Statut : Work in Progress**
 >
-> Le pipeline de préparation des données et d'entraînement du modèle est fonctionnel.  
-> Les briques DVC, FastAPI, Docker, Airflow, monitoring et CI/CD sont en cours d'intégration.
+> Les briques **data processing**, **entraînement ML**, **DVC**, **FastAPI**, **sécurisation de l'API**, **Docker** et **Nginx** sont fonctionnelles.
+>
+> **Airflow**, **MLflow**, **Prometheus/Grafana** et la **CI/CD** restent à intégrer.
 
 ---
 
-## 🎯 Objectifs du projet
+## 📑 Sommaire
+
+- [🎯 Objectifs du projet](#-objectifs-du-projet)
+- [📊 Données](#-données)
+- [🏗️ Architecture actuelle](#️-architecture-actuelle)
+- [🔄 Pipeline de données](#-pipeline-de-données)
+- [🧹 Nettoyage métier](#-nettoyage-métier)
+- [🧱 Dataset ML consolidé](#-dataset-ml-consolidé)
+- [🤖 Modélisation](#-modélisation)
+  - [Split temporel](#split-temporel)
+  - [Valeurs extrêmes](#valeurs-extrêmes)
+  - [Features](#features)
+- [🌲 Modèle actuel](#-modèle-actuel)
+  - [Performances sur 2024](#performances-sur-2024)
+  - [Artefacts](#artefacts)
+- [🚀 Installation locale](#-installation-locale)
+- [🗃️ DVC — Versionnement des données et modèles](#️-dvc--versionnement-des-données-et-modèles)
+  - [Compatibilité des dépendances Google Drive](#compatibilité-des-dépendances-google-drive)
+  - [Remote Google Drive](#remote-google-drive)
+  - [Récupérer les données](#récupérer-les-données)
+  - [Publier une nouvelle version](#publier-une-nouvelle-version)
+  - [Workflow équipe](#workflow-équipe)
+- [⚡ FastAPI — API de prédiction](#-fastapi--api-de-prédiction)
+  - [Lancement local](#lancement-local)
+  - [Health check](#health-check)
+  - [Informations modèle](#informations-modèle)
+  - [Prédiction sécurisée](#prédiction-sécurisée)
+- [🐳 Docker et Nginx](#-docker-et-nginx)
+  - [Lancer la stack](#lancer-la-stack)
+  - [Tester via Nginx](#tester-via-nginx)
+- [▶️ Reproduire la chaîne complète](#️-reproduire-la-chaîne-complète)
+- [🚧 Roadmap MLOps](#-roadmap-mlops)
+- [🗺️ Architecture cible](#️-architecture-cible)
+- [🎓 Contexte](#-contexte)
+
+---
+
+# 🎯 Objectifs du projet
 
 L'objectif est de construire une chaîne ML reproductible permettant de :
 
-1. récupérer et préparer les données DVF ;
-2. nettoyer les transactions immobilières selon des règles métier ;
-3. construire automatiquement un dataset destiné au Machine Learning ;
+1. préparer les données DVF ;
+2. appliquer automatiquement les règles de nettoyage métier ;
+3. construire un dataset destiné au Machine Learning ;
 4. entraîner et évaluer un modèle de prédiction du prix au m² ;
 5. versionner les données et les modèles ;
-6. exposer le modèle via une API sécurisée ;
+6. exposer le modèle via une API REST sécurisée ;
 7. conteneuriser les différents composants ;
 8. orchestrer le pipeline ;
-9. superviser le modèle et l'infrastructure.
+9. suivre les expérimentations ML ;
+10. superviser l'API et l'infrastructure.
 
-L'objectif n'est donc pas uniquement d'obtenir un modèle performant, mais de construire un **cycle de vie ML complet et reproductible**.
+Le projet vise donc un **cycle de vie ML reproductible et déployable**, et pas uniquement la performance d'un modèle.
 
 ---
 
 # 📊 Données
 
-Le projet utilise les données ouvertes **DVF — Demandes de valeurs foncières**.
+Le projet utilise les données ouvertes **DVF — Demandes de valeurs foncières**, mises à disposition par l'administration française.
 
-Les données décrivent les mutations immobilières enregistrées en France et contiennent notamment :
+Elles contiennent notamment :
 
 - la date de mutation ;
 - la valeur foncière ;
@@ -45,7 +84,7 @@ Les données décrivent les mutations immobilières enregistrées en France et c
 - la latitude ;
 - la longitude.
 
-Le projet utilise actuellement les millésimes :
+Les millésimes utilisés sont :
 
 ```text
 2020
@@ -55,21 +94,33 @@ Le projet utilise actuellement les millésimes :
 2024
 ```
 
-> ⚠️ Le millésime 2020 disponible dans le projet commence au 1er juillet 2020. Les volumes annuels ne doivent donc pas être comparés naïvement entre années.
+> ⚠️ Le fichier 2020 disponible dans le projet commence au **1er juillet 2020**. Les volumes annuels ne doivent donc pas être comparés naïvement entre années.
+
+Les fichiers lourds ne sont pas stockés directement dans Git : les données sources et les artefacts du modèle sont versionnés avec **DVC** et stockés sur le remote **Google Drive** du projet.
 
 ---
 
-# 🏗️ Architecture du projet
+# 🏗️ Architecture actuelle
 
 ```text
 compagnon-immobilier-mlops/
 │
+├── app/
+│   ├── __init__.py
+│   ├── main.py
+│   ├── model_loader.py
+│   ├── schemas.py
+│   └── security.py
+│
 ├── data/
-│   ├── raw/                 # Données DVF sources (.csv.gz)
-│   ├── parquet/             # Conversion intermédiaire en Parquet
-│   ├── processed/           # Données nettoyées selon les règles métier
+│   ├── raw/                 # Sources DVF suivies par DVC
+│   ├── parquet/             # Intermédiaires reconstruisibles
+│   ├── processed/           # Données nettoyées
 │   ├── prod/                # Dataset consolidé destiné au ML
-│   └── models/              # Modèles entraînés et métadonnées
+│   └── models/              # Modèle + métadonnées suivis par DVC
+│
+├── nginx/
+│   └── nginx.conf
 │
 ├── scripts/
 │   ├── prepare_raw_data.py
@@ -80,6 +131,8 @@ compagnon-immobilier-mlops/
 ├── src/
 │   └── compagnon_immo/
 │       ├── data/
+│       │   ├── __init__.py
+│       │   ├── ingestion.py
 │       │   ├── cleaning.py
 │       │   ├── build_dataset.py
 │       │   └── io.py
@@ -90,21 +143,26 @@ compagnon-immobilier-mlops/
 │           ├── train.py
 │           └── transformers.py
 │
+├── .dvc/
+├── .dvcignore
+├── data/raw.dvc
+├── data/models.dvc
+├── Dockerfile
+├── docker-compose.yml
 ├── pyproject.toml
-├── .gitignore
 └── README.md
 ```
 
-La séparation entre `scripts/` et `src/` est volontaire :
+La séparation est volontaire :
 
 - `src/compagnon_immo/` contient la **logique Python réutilisable** ;
-- `scripts/` contient les **points d'entrée exécutables** qui orchestrent cette logique.
+- `scripts/` contient les **points d'entrée exécutables** ;
+- `app/` contient la **couche de serving FastAPI** ;
+- `nginx/` contient la configuration du **reverse proxy**.
 
 ---
 
 # 🔄 Pipeline de données
-
-Le pipeline actuel suit les étapes suivantes :
 
 ```text
 DVF .csv.gz
@@ -116,7 +174,7 @@ prepare_raw_data.py
 full_YYYY.parquet
      │
      ▼
-preprocess_data.py
+preprocess_data.py --year YYYY
      │
      ▼
 dvf_appartements_vente_YYYY.parquet.gz
@@ -131,24 +189,22 @@ dvf_appartements_model_base_2020_2024.parquet.gz
 train_model.py
      │
      ▼
-RandomForestRegressor
+prix_m2_pipeline_2020_2023.joblib
 ```
 
 ---
 
 # 🧹 Nettoyage métier
 
-Les données DVF brutes contiennent plusieurs lignes pour une même mutation et différents types de biens.
-
 Le preprocessing applique notamment les règles suivantes :
 
 - conservation des mutations de nature `Vente` ;
 - conservation des mutations contenant un appartement ;
 - exclusion des mutations mixtes contenant une maison ou un local industriel/commercial ;
-- conservation des mutations avec exactement un appartement ;
-- agrégation des différentes lignes d'une mutation ;
+- conservation des mutations contenant exactement un appartement ;
+- agrégation des informations au niveau de la mutation ;
 - création d'indicateurs comme `has_dependance` ;
-- conservation d'une ligne par mutation.
+- conservation d'une ligne par mutation/appartement.
 
 Exemple sur 2020 :
 
@@ -161,11 +217,11 @@ Après filtre 1 appartement    :   363 082 lignes
 Après agrégation              :   203 167 mutations
 ```
 
-Le même pipeline est ensuite appliqué aux autres millésimes.
+Le même pipeline est appliqué aux millésimes 2021 à 2024.
 
 ---
 
-# 🧱 Construction du dataset ML
+# 🧱 Dataset ML consolidé
 
 Le script :
 
@@ -173,16 +229,14 @@ Le script :
 python scripts/build_model_dataset.py
 ```
 
-charge les datasets annuels nettoyés, crée la cible `prix_m2`, vérifie les coordonnées géographiques, conserve la France métropolitaine et assemble les différents millésimes.
+assemble les datasets annuels après création de `prix_m2`, validation des coordonnées et filtrage sur la France métropolitaine.
 
-Le dataset consolidé actuel contient :
+Le dataset de base contient actuellement :
 
 ```text
 1 686 963 observations
 9 colonnes
 ```
-
-Répartition :
 
 | Année | Observations |
 |---:|---:|
@@ -192,7 +246,7 @@ Répartition :
 | 2023 | 341 114 |
 | 2024 | 302 643 |
 
-Les colonnes conservées sont :
+Colonnes :
 
 ```text
 date_mutation
@@ -212,25 +266,23 @@ prix_m2
 
 ## Split temporel
 
-Le modèle est évalué avec un **split temporel**, afin de se rapprocher d'un véritable scénario de production.
+Le modèle est évalué avec un split temporel :
 
 ```text
 TRAIN : 2020 → 2023
 TEST  : 2024
 ```
 
-Volumes avant filtrage de la cible :
+Avant filtrage de la cible :
 
 ```text
 Train : 1 384 320 observations
 Test  :   302 643 observations
 ```
 
-Cette approche évite d'entraîner et d'évaluer aléatoirement le modèle sur des transactions provenant des mêmes périodes.
+Cette stratégie reproduit mieux un scénario de production qu'un split aléatoire : le modèle apprend sur le passé et est évalué sur une période future.
 
----
-
-## Traitement des valeurs extrêmes
+## Valeurs extrêmes
 
 La cible est :
 
@@ -238,20 +290,11 @@ La cible est :
 prix_m2 = valeur_fonciere / surface_reelle_bati
 ```
 
-Les bornes sont calculées **uniquement sur le jeu d'entraînement** afin d'éviter une fuite d'information depuis le jeu de test.
-
-Quantiles utilisés :
+Les bornes 1 % / 99 % sont calculées **uniquement sur le train**, afin d'éviter toute fuite d'information depuis 2024.
 
 ```text
-q01 = 1 %
-q99 = 99 %
-```
-
-Bornes obtenues sur le train :
-
-```text
-475,00 €/m²
-14 327,47 €/m²
+q01 =   475,00 €/m²
+q99 = 14 327,47 €/m²
 ```
 
 Après filtrage :
@@ -261,13 +304,9 @@ Train : 1 356 636 observations
 Test  :   296 657 observations
 ```
 
-Les mêmes bornes apprises sur le train sont appliquées au jeu de test 2024.
+## Features
 
----
-
-# 🧠 Features
-
-Les données fournies au pipeline sont :
+Entrées du pipeline :
 
 ```text
 surface_reelle_bati
@@ -278,17 +317,15 @@ has_dependance
 nom_commune
 ```
 
-Une transformation custom sklearn, `CommuneSalesEncoder`, apprend sur le train le nombre de transactions observées pour chaque commune.
-
-Elle crée :
+`CommuneSalesEncoder` apprend sur le train le nombre d'observations par commune et crée :
 
 ```text
 nb_ventes_commune
 ```
 
-Une commune inconnue lors de la prédiction reçoit la médiane du nombre de ventes par commune calculée lors de l'entraînement.
+Une commune inconnue lors d'une prédiction reçoit la médiane des volumes communaux du train.
 
-Les features réellement transmises au modèle sont donc :
+Les features réellement transmises au modèle sont :
 
 ```text
 surface_reelle_bati
@@ -299,19 +336,19 @@ has_dependance
 nb_ventes_commune
 ```
 
-Les transformations custom sont définies dans un véritable module Python :
+Les transformers custom sont définis dans :
 
 ```text
 compagnon_immo.models.transformers
 ```
 
-Cela permet notamment au pipeline sérialisé avec `joblib` d'être correctement rechargé dans un autre processus ou, à terme, par l'API.
+Cette organisation permet de sérialiser et recharger proprement le pipeline avec `joblib` sans dépendance à une classe définie dans un notebook ou dans `__main__`.
 
 ---
 
 # 🌲 Modèle actuel
 
-Le premier modèle de référence est un :
+Modèle :
 
 ```text
 RandomForestRegressor
@@ -327,13 +364,7 @@ random_state     = 42
 n_jobs           = 2
 ```
 
-Cette configuration a notamment été choisie pour permettre l'entraînement du dataset complet sur une machine disposant de ressources limitées.
-
----
-
-# 📈 Performances actuelles
-
-Évaluation sur les transactions **2024**, jamais utilisées pour entraîner le modèle :
+## Performances sur 2024
 
 | Métrique | Résultat |
 |---|---:|
@@ -341,13 +372,9 @@ Cette configuration a notamment été choisie pour permettre l'entraînement du 
 | RMSE | 1 126,22 €/m² |
 | R² | 0,8017 |
 
-Ces résultats constituent le **modèle de référence actuel** et pourront être comparés à de futurs modèles.
+Ces résultats constituent le modèle de référence actuel.
 
----
-
-# 💾 Artefacts du modèle
-
-Après entraînement :
+## Artefacts
 
 ```text
 data/models/
@@ -355,7 +382,7 @@ data/models/
 └── prix_m2_pipeline_2020_2023.metadata.json
 ```
 
-Le fichier `.joblib` contient l'intégralité du pipeline sklearn :
+Le `.joblib` contient :
 
 ```text
 CommuneSalesEncoder
@@ -365,41 +392,30 @@ FeatureSelector
 RandomForestRegressor
 ```
 
-Le fichier JSON contient les métadonnées permettant de documenter l'entraînement :
+Le JSON contient notamment :
 
 - années d'entraînement ;
 - année de test ;
-- features ;
-- cible ;
+- cible et features ;
 - bornes de filtrage ;
 - paramètres du modèle ;
-- nombre d'observations ;
-- MAE ;
-- RMSE ;
-- R².
+- volumes train/test ;
+- MAE, RMSE et R².
 
 ---
 
-# 🚀 Installation
+# 🚀 Installation locale
 
 ## 1. Cloner le dépôt
 
 ```bash
-git clone <URL_DU_REPOSITORY>
+git clone https://github.com/standemdem/compagnon-immobilier-mlops.git
 cd compagnon-immobilier-mlops
 ```
 
----
+## 2. Utiliser Python 3.12.2
 
-## 2. Sélectionner Python
-
-Le projet nécessite :
-
-```text
-Python >= 3.12
-```
-
-Avec `pyenv`, par exemple :
+Avec `pyenv` :
 
 ```bash
 pyenv install 3.12.2
@@ -412,193 +428,52 @@ Vérifier :
 python --version
 ```
 
----
-
-## 3. Créer l'environnement virtuel
+## 3. Créer le virtualenv
 
 ```bash
 python -m venv .venv
-```
-
-Activation sous Linux / WSL :
-
-```bash
 source .venv/bin/activate
 ```
-
----
 
 ## 4. Installer le projet
 
 ```bash
-pip install --upgrade pip
+python -m pip install --upgrade pip
 pip install -e .
 ```
 
-Les dépendances principales sont déclarées dans `pyproject.toml`.
-
-Actuellement :
+Les dépendances principales sont déclarées dans `pyproject.toml`, notamment :
 
 ```text
 pandas
 pyarrow
 requests
 scikit-learn
+pydantic
+fastapi
+python-dotenv
+uvicorn
+dvc[gdrive]
 ```
 
 ---
 
-# ▶️ Reproduire le pipeline
+# 🗃️ DVC — Versionnement des données et modèles
 
-## Étape 1 — Placer les données sources
+DVC est **fonctionnel** dans le projet.
 
-Placer les fichiers DVF `.csv.gz` dans :
-
-```text
-data/raw/
-```
-
-Les données ne sont volontairement pas versionnées directement avec Git.
-
----
-
-## Étape 2 — Conversion en Parquet
-
-```bash
-python scripts/prepare_raw_data.py
-```
-
-Les fichiers intermédiaires sont créés dans :
-
-```text
-data/parquet/
-```
-
-sous la forme :
-
-```text
-full_2020.parquet
-full_2021.parquet
-...
-```
-
----
-
-## Étape 3 — Preprocessing annuel
-
-Exemple :
-
-```bash
-python scripts/preprocess_data.py --year 2020
-```
-
-Puis :
-
-```bash
-python scripts/preprocess_data.py --year 2021
-python scripts/preprocess_data.py --year 2022
-python scripts/preprocess_data.py --year 2023
-python scripts/preprocess_data.py --year 2024
-```
-
-Les datasets nettoyés sont écrits dans :
-
-```text
-data/processed/
-```
-
----
-
-## Étape 4 — Construire le dataset ML
-
-```bash
-python scripts/build_model_dataset.py
-```
-
-Sortie :
-
-```text
-data/prod/dvf_appartements_model_base_2020_2024.parquet.gz
-```
-
----
-
-## Étape 5 — Entraîner le modèle
-
-```bash
-python scripts/train_model.py
-```
-
-Le script :
-
-1. charge le dataset consolidé ;
-2. réalise le split temporel ;
-3. calcule les quantiles sur le train ;
-4. filtre train et test ;
-5. prépare les features ;
-6. entraîne le pipeline ;
-7. évalue le modèle sur 2024 ;
-8. sauvegarde le modèle ;
-9. sauvegarde ses métadonnées.
-
----
-
-# 🔁 Reproductibilité
-
-Le projet cherche à séparer clairement :
-
-```text
-code
-données
-configuration
-modèles
-métriques
-```
-
-Git est utilisé pour versionner le code.
-
-Les datasets et modèles volumineux ne doivent pas être stockés directement dans Git.
-
-L'intégration de **DVC** est prévue afin de permettre à un autre développeur de reproduire le pipeline avec les mêmes versions de données.
-
----
-
-# 🚧 Work in Progress — Roadmap MLOps
-
-Le pipeline data et l'entraînement constituent actuellement la partie la plus avancée du projet.
-
-Les briques suivantes sont prévues.
-
-## 🗃️ DVC — Data Version Control
-
-Objectifs :
-
-- versionner les datasets ;
-- versionner les artefacts ML volumineux ;
-- stocker les données sur un remote externe ;
-- permettre la récupération des données avec `dvc pull`.
-
-Les fichiers de données et les artefacts ML volumineux ne sont pas stockés directement dans Git.
-
-Le projet utilise **DVC — Data Version Control** afin de versionner :
-
-* les données sources DVF ;
-* les artefacts du modèle entraîné.
-
-Git conserve uniquement les fichiers de métadonnées DVC, tandis que les fichiers réels sont stockés sur un remote Google Drive.
-
-### Organisation actuelle
+Git versionne le code et les métadonnées DVC. Les fichiers lourds sont stockés dans un remote Google Drive.
 
 ```text
 GitHub
 ├── code Python
-├── configuration DVC
+├── .dvc/config
 ├── data/raw.dvc
 └── data/models.dvc
 
 Google Drive
-├── données DVF sources
-└── modèles entraînés
+├── données sources DVF
+└── artefacts modèle
 ```
 
 Les dossiers actuellement suivis par DVC sont :
@@ -608,7 +483,7 @@ data/raw/
 data/models/
 ```
 
-Les dossiers intermédiaires :
+Les intermédiaires :
 
 ```text
 data/parquet/
@@ -616,58 +491,30 @@ data/processed/
 data/prod/
 ```
 
-ne sont pas versionnés avec DVC pour le moment, car ils peuvent être reconstruits à partir des données sources et des scripts du projet.
+ne sont pas suivis à ce stade, car ils sont reconstruisibles à partir des données sources et du code.
 
----
+## Compatibilité des dépendances Google Drive
 
-### Installation
+L'intégration DVC/Google Drive repose sur plusieurs dépendances dont certaines versions récentes sont incompatibles entre elles.
 
-Le support DVC Google Drive est déclaré dans les dépendances du projet.
+La combinaison validée sur Python 3.12.2 pour ce projet est :
 
-Après création et activation de l'environnement virtuel :
+```text
+DVC            3.67.1
+dvc-gdrive     3.0.1
+PyDrive2       1.21.3
+pyOpenSSL      24.2.1
+cryptography   43.0.3
+asyncssh       2.21.1
+```
+
+Après l'installation du projet :
 
 ```bash
 pip install -e .
 ```
 
-Vérifier l'installation :
-
-```bash
-dvc --version
-```
-
----
-### ⚠️ Compatibilité des dépendances Google Drive
-
-L'intégration DVC avec Google Drive repose notamment sur :
-
-```text
-dvc-gdrive
-PyDrive2
-pyOpenSSL
-cryptography
-asyncssh
-```
-
-Dans notre environnement Python 3.12, l'installation standard peut produire un conflit de versions entre ces packages.
-
-La combinaison validée pour ce projet est :
-
-```text
-PyDrive2      1.21.3
-pyOpenSSL     24.2.1
-cryptography  43.0.3
-asyncssh      2.21.1
-dvc-gdrive    3.0.1
-```
-
-Après l'installation normale du projet :
-
-```bash
-pip install -e .
-```
-
-forcer les versions compatibles avec :
+forcer les versions compatibles :
 
 ```bash
 python -m pip install --force-reinstall \
@@ -677,19 +524,19 @@ python -m pip install --force-reinstall \
   "asyncssh==2.21.1"
 ```
 
-Puis vérifier qu'aucune dépendance n'est cassée :
+Vérifier ensuite l'intégrité des dépendances :
 
 ```bash
 python -m pip check
 ```
 
-Le résultat attendu est :
+Résultat attendu :
 
 ```text
 No broken requirements found.
 ```
 
-Vérifier ensuite les versions installées :
+Puis vérifier les versions :
 
 ```bash
 python -m pip show \
@@ -700,115 +547,41 @@ python -m pip show \
   dvc-gdrive
 ```
 
-Cette étape est importante : certaines combinaisons plus récentes de `cryptography` sont incompatibles avec la version de `PyDrive2` utilisée par `dvc-gdrive`, ce qui peut provoquer des erreurs lors de l'authentification Google Drive.
+> ⚠️ Éviter de mettre à jour isolément `pyOpenSSL`, `cryptography`, `PyDrive2` ou `asyncssh` sans vérifier les contraintes de l'ensemble de la pile.
 
-Ne pas exécuter ensuite de mise à jour isolée du type :
+## Remote Google Drive
 
-```bash
-pip install --upgrade pyOpenSSL
-```
-
-ou :
-
-```bash
-pip install --upgrade cryptography
-```
-
-sans vérifier les contraintes de l'ensemble de la pile, car cela peut réintroduire le conflit.
-
-### Initialisation
-
-DVC est initialisé directement dans le dépôt Git :
-
-```bash
-dvc init
-```
-
-Cela crée notamment :
-
-```text
-.dvc/
-.dvcignore
-```
-
-Ces fichiers doivent être versionnés avec Git.
-
----
-
-### Suivi des données
-
-Les données sources sont ajoutées à DVC avec :
-
-```bash
-dvc add data/raw
-```
-
-Les modèles et métadonnées du modèle sont suivis avec :
-
-```bash
-dvc add data/models
-```
-
-DVC génère alors :
-
-```text
-data/raw.dvc
-data/models.dvc
-```
-
-Ces fichiers `.dvc` doivent être commités dans Git.
-
-Les données réelles ne sont pas ajoutées à Git.
-
----
-
-### Remote Google Drive
-
-Le projet utilise actuellement un dossier Google Drive comme remote DVC.
-
-La configuration du remote est enregistrée dans :
+Le remote est configuré dans :
 
 ```text
 .dvc/config
 ```
 
-Le remote peut être configuré avec :
-
-```bash
-dvc remote add -d gdrive gdrive://ID_DU_DOSSIER_GOOGLE_DRIVE
-```
-
-Vérification :
+Vérifier sa présence :
 
 ```bash
 dvc remote list
 ```
 
----
+Les identifiants OAuth ne doivent **jamais** être commités.
 
-### Authentification Google Drive
+L'authentification utilise un client OAuth Google Cloud personnalisé.
 
-L'authentification utilise un **client OAuth Google Cloud personnalisé**.
-
-Le client OAuth est configuré en mode test dans Google Cloud, avec les contributeurs du projet ajoutés comme utilisateurs test.
-
-Les identifiants OAuth doivent rester locaux et ne jamais être commités dans Git.
-
-Ils sont configurés avec :
+Les identifiants sont configurés localement :
 
 ```bash
 dvc remote modify --local gdrive \
   gdrive_client_id "CLIENT_ID"
 ```
 
-puis :
+Puis :
 
 ```bash
 dvc remote modify --local gdrive \
   gdrive_client_secret "CLIENT_SECRET"
 ```
 
-Ces valeurs sont stockées dans :
+Ces valeurs sont enregistrées dans :
 
 ```text
 .dvc/config.local
@@ -816,13 +589,35 @@ Ces valeurs sont stockées dans :
 
 Ce fichier doit rester ignoré par Git.
 
-Chaque membre de l'équipe doit utiliser ses propres identifiants OAuth locaux.
+### Configuration d'un nouveau contributeur
 
----
+Pour accéder au remote DVC, chaque contributeur doit disposer :
 
-### Envoyer les données vers le remote
+1. d'un accès au repository GitHub ;
+2. d'un accès au dossier Google Drive utilisé comme remote ;
+3. d'un compte Google déclaré comme **utilisateur test** de l'application OAuth Google Cloud ;
+4. de ses propres identifiants OAuth configurés localement.
 
-Après modification d'un dataset ou d'un modèle :
+Les secrets OAuth ne sont donc jamais partagés dans le repository.
+
+## Récupérer les données
+
+Après clonage du repository et configuration de l'authentification :
+
+```bash
+dvc pull
+```
+
+DVC restaure notamment :
+
+```text
+data/raw/
+data/models/
+```
+
+## Publier une nouvelle version
+
+Après modification d'un dossier suivi :
 
 ```bash
 dvc add data/raw
@@ -834,15 +629,13 @@ ou :
 dvc add data/models
 ```
 
-Puis :
+Envoyer les fichiers vers le remote :
 
 ```bash
 dvc push
 ```
 
-DVC envoie uniquement les nouveaux objets ou les objets modifiés vers le remote Google Drive.
-
-Ensuite, les fichiers `.dvc` modifiés doivent être versionnés avec Git :
+Puis versionner les métadonnées DVC avec Git :
 
 ```bash
 git add data/*.dvc
@@ -850,59 +643,16 @@ git commit -m "Update DVC tracked artifacts"
 git push
 ```
 
----
+## Workflow équipe
 
-### Récupérer les données sur une nouvelle machine
-
-Après clonage du dépôt :
-
-```bash
-git clone <URL_DU_REPOSITORY>
-cd compagnon-immobilier-mlops
-```
-
-Installer le projet :
-
-```bash
-pip install -e .
-```
-
-Configurer localement les identifiants OAuth Google Drive.
-
-Puis récupérer les fichiers suivis par DVC :
-
-```bash
-dvc pull
-```
-
-DVC reconstruit alors localement :
-
-```text
-data/raw/
-data/models/
-```
-
-à partir des versions référencées dans Git.
-
----
-
-### Travail en équipe
-
-Pour pouvoir utiliser le remote DVC, un nouveau contributeur doit disposer :
-
-1. d'un accès au dépôt GitHub ;
-2. d'un accès en écriture au dossier Google Drive utilisé comme remote ;
-3. d'un compte Google déclaré comme utilisateur test de l'application OAuth ;
-4. de ses propres identifiants OAuth configurés localement.
-
-Le workflow standard est alors :
+Le workflow standard est :
 
 ```text
 git pull
    ↓
 dvc pull
    ↓
-travail / génération de nouveaux artefacts
+travail / génération d'artefacts
    ↓
 dvc add
    ↓
@@ -911,224 +661,400 @@ dvc push
 git add / commit / push
 ```
 
----
+DVC conserve les différentes versions des fichiers par hash.
 
-### Principe de versionnement
-
-DVC ne crée pas automatiquement des fichiers comme :
-
-```text
-dataset_v1.parquet
-dataset_v2.parquet
-dataset_v3.parquet
-```
-
-Le fichier conserve le même nom logique, mais chaque version est identifiée par son hash.
-
-Git conserve l'historique des métadonnées DVC.
-
-Ainsi, pour revenir à une ancienne version :
+Pour restaurer une ancienne version :
 
 ```bash
 git checkout <ancien_commit>
 dvc pull
 ```
 
-DVC restaure alors automatiquement la version des données correspondant à ce commit Git.
+DVC restaure alors les fichiers correspondant à la version référencée par ce commit Git.
 
 ---
 
-### Statut
+# ⚡ FastAPI — API de prédiction
+
+La première version de l'API est **fonctionnelle**.
+
+Elle expose :
 
 ```text
-✅ DVC initialisé
-✅ data/raw suivi par DVC
-✅ data/models suivi par DVC
-✅ Remote Google Drive configuré
-✅ Authentification OAuth fonctionnelle
-✅ dvc push validé
-```
-
-La prochaine évolution prévue est d'intégrer les étapes de transformation et d'entraînement dans un `dvc.yaml` afin de pouvoir reconstruire automatiquement le pipeline avec :
-
-```bash
-dvc repro
-```
-
-
-## ⚡ FastAPI
-
-Une API REST exposera le modèle.
-
-Endpoints envisagés :
-
-```text
+GET  /
 GET  /health
 GET  /model/info
 POST /predict
+GET  /docs
+GET  /redoc
 ```
 
-`POST /predict` recevra notamment :
+## Lancement local
+
+Créer un fichier `.env` à la racine :
+
+```env
+API_KEY=une_cle_api
+```
+
+> ⚠️ `.env` est ignoré par Git et ne doit jamais être commité.
+
+Lancer l'API :
+
+```bash
+uvicorn app.main:app --reload
+```
+
+Elle est alors disponible sur :
+
+```text
+http://127.0.0.1:8000
+```
+
+Documentation Swagger :
+
+```text
+http://127.0.0.1:8000/docs
+```
+
+Documentation ReDoc :
+
+```text
+http://127.0.0.1:8000/redoc
+```
+
+## Health check
+
+```bash
+curl http://127.0.0.1:8000/health
+```
+
+Réponse :
 
 ```json
 {
+  "status": "ok"
+}
+```
+
+## Informations modèle
+
+```bash
+curl http://127.0.0.1:8000/model/info
+```
+
+Cette route expose les métadonnées du modèle courant :
+
+- nom et type du modèle ;
+- années d'entraînement ;
+- année de test ;
+- features ;
+- bornes de filtrage ;
+- paramètres du Random Forest ;
+- volumes train/test ;
+- métriques d'évaluation.
+
+## Prédiction sécurisée
+
+La route :
+
+```text
+POST /predict
+```
+
+est protégée par une API key.
+
+La requête doit contenir le header :
+
+```text
+x-api-key
+```
+
+Exemple :
+
+```bash
+curl -X POST http://127.0.0.1:8000/predict \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: une_cle_api" \
+  -d '{
     "surface_reelle_bati": 62,
     "nombre_pieces_principales": 3,
     "latitude": 46.20,
     "longitude": 5.22,
-    "has_dependance": 1,
+    "has_dependance": true,
     "nom_commune": "Bourg-en-Bresse"
+  }'
+```
+
+Réponse type :
+
+```json
+{
+  "prix_m2": 2032.801978760189
 }
 ```
 
-L'API chargera le pipeline `.joblib` et retournera le prix au m² prédit.
-
-Une authentification par **API Key** est prévue.
-
-Statut :
+Une mauvaise clé retourne :
 
 ```text
-🚧 À intégrer
+401 Unauthorized
+```
+
+Les données d'entrée sont validées par **Pydantic**.
+
+Par exemple, une surface négative, un nombre de pièces inférieur à 1 ou des coordonnées invalides sont rejetés avant l'appel au modèle.
+
+Une requête invalide retourne :
+
+```text
+422 Unprocessable Entity
 ```
 
 ---
 
-## 🐳 Docker
+# 🐳 Docker et Nginx
 
-La conteneurisation doit permettre d'exécuter l'application indépendamment de la machine hôte.
+La conteneurisation de l'API est **fonctionnelle**.
 
-Architecture envisagée :
+L'architecture actuelle utilise deux conteneurs :
 
 ```text
 Client
   │
   ▼
-Nginx
+localhost:8080
   │
   ▼
-FastAPI
-  │
-  ▼
-Pipeline ML
+┌──────────────────┐
+│      Nginx       │
+│ compagnon_nginx  │
+│       :80        │
+└────────┬─────────┘
+         │
+         │ réseau Docker
+         ▼
+┌──────────────────┐
+│     FastAPI      │
+│  compagnon_api   │
+│      :8000       │
+└────────┬─────────┘
+         │
+         ▼
+ Pipeline sklearn
 ```
 
-Statut :
+Cette séparation permet de conserver FastAPI comme service applicatif interne tandis que Nginx constitue le point d'entrée du système.
+
+Le port FastAPI `8000` n'est pas directement exposé à la machine hôte.
+
+Le point d'entrée est :
 
 ```text
-🚧 À intégrer
+localhost:8080
+```
+
+via Nginx.
+
+## Lancer la stack
+
+Créer le fichier `.env` :
+
+```env
+API_KEY=une_cle_api
+```
+
+Construire et lancer les conteneurs :
+
+```bash
+docker compose up --build
+```
+
+Vérifier leur état :
+
+```bash
+docker compose ps
+```
+
+Les conteneurs attendus sont :
+
+```text
+compagnon_api
+compagnon_nginx
+```
+
+## Tester via Nginx
+
+Health check :
+
+```bash
+curl http://127.0.0.1:8080/health
+```
+
+Prédiction :
+
+```bash
+curl -X POST http://127.0.0.1:8080/predict \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: une_cle_api" \
+  -d '{
+    "surface_reelle_bati": 62,
+    "nombre_pieces_principales": 3,
+    "latitude": 46.20,
+    "longitude": 5.22,
+    "has_dependance": true,
+    "nom_commune": "Bourg-en-Bresse"
+  }'
+```
+
+Arrêter les services :
+
+```bash
+docker compose down
 ```
 
 ---
 
-## 🌬️ Airflow
+# ▶️ Reproduire la chaîne complète
 
-Apache Airflow sera utilisé pour orchestrer le pipeline.
+Voici le workflow permettant de reconstruire le projet sur une nouvelle machine.
 
-DAG envisagé :
+## 1. Cloner le projet
 
-```text
-ingestion
-   ↓
-conversion parquet
-   ↓
-preprocessing
-   ↓
-construction dataset ML
-   ↓
-entraînement
-   ↓
-évaluation
-   ↓
-publication du modèle
+```bash
+git clone https://github.com/standemdem/compagnon-immobilier-mlops.git
+cd compagnon-immobilier-mlops
 ```
 
-Objectifs :
+## 2. Préparer Python
 
-- automatiser les traitements ;
-- gérer les dépendances entre étapes ;
-- tracer les exécutions ;
-- faciliter les futurs réentraînements.
+```bash
+pyenv install 3.12.2
+pyenv local 3.12.2
 
-Statut :
+python -m venv .venv
+source .venv/bin/activate
+```
 
-```text
-🚧 À intégrer
+## 3. Installer les dépendances
+
+```bash
+python -m pip install --upgrade pip
+pip install -e .
+```
+
+Appliquer ensuite les versions compatibles DVC/Google Drive documentées dans la section DVC.
+
+## 4. Configurer DVC
+
+Configurer localement les identifiants OAuth Google Drive :
+
+```bash
+dvc remote modify --local gdrive \
+  gdrive_client_id "CLIENT_ID"
+
+dvc remote modify --local gdrive \
+  gdrive_client_secret "CLIENT_SECRET"
+```
+
+Puis récupérer les données et modèles :
+
+```bash
+dvc pull
+```
+
+## 5. Reconstruire les données intermédiaires
+
+```bash
+python scripts/prepare_raw_data.py
+```
+
+Puis :
+
+```bash
+python scripts/preprocess_data.py --year 2020
+python scripts/preprocess_data.py --year 2021
+python scripts/preprocess_data.py --year 2022
+python scripts/preprocess_data.py --year 2023
+python scripts/preprocess_data.py --year 2024
+```
+
+Construire le dataset ML :
+
+```bash
+python scripts/build_model_dataset.py
+```
+
+## 6. Entraîner le modèle
+
+```bash
+python scripts/train_model.py
+```
+
+## 7. Publier le nouveau modèle avec DVC
+
+```bash
+dvc add data/models
+dvc push
+```
+
+Puis :
+
+```bash
+git add data/models.dvc
+git commit -m "Update trained model"
+git push
+```
+
+## 8. Lancer l'API conteneurisée
+
+Créer `.env` :
+
+```env
+API_KEY=une_cle_api
+```
+
+Puis :
+
+```bash
+docker compose up --build
+```
+
+Tester :
+
+```bash
+curl http://127.0.0.1:8080/health
 ```
 
 ---
 
-## 📊 Monitoring — Grafana
+# 🚧 Roadmap MLOps
 
-Une couche de monitoring est prévue autour de Grafana.
-
-Les métriques envisagées concernent notamment :
-
-- disponibilité de l'API ;
-- nombre de requêtes ;
-- latence ;
-- erreurs HTTP ;
-- prédictions produites ;
-- métriques techniques de l'application.
-
-Selon l'architecture retenue, une collecte de métriques via Prometheus pourra être ajoutée.
-
-Statut :
-
-```text
-🚧 À intégrer
-```
-
----
-
-## 🧪 Tracking des expérimentations
-
-Une solution de tracking ML pourra être ajoutée afin de conserver :
-
-- paramètres des modèles ;
-- métriques ;
-- versions ;
-- artefacts ;
-- comparaison entre expériences.
-
-**MLflow** est envisagé pour cette partie.
-
-Statut :
-
-```text
-🚧 À intégrer
-```
-
----
-
-## ⚙️ CI/CD
-
-Une pipeline CI/CD est également prévue afin d'automatiser notamment :
-
-```text
-lint
-↓
-tests
-↓
-build Docker
-↓
-validation
-↓
-déploiement
-```
-
-La solution envisagée est GitHub Actions.
-
-Statut :
-
-```text
-🚧 À intégrer
-```
+| Composant | Statut |
+|---|---|
+| Ingestion / conversion DVF | ✅ Fonctionnel |
+| Nettoyage métier | ✅ Fonctionnel |
+| Dataset ML multi-années | ✅ Fonctionnel |
+| Split temporel | ✅ Fonctionnel |
+| Pipeline sklearn | ✅ Fonctionnel |
+| Évaluation ML | ✅ Fonctionnel |
+| Sérialisation Joblib | ✅ Fonctionnel |
+| Métadonnées modèle | ✅ Fonctionnel |
+| DVC | ✅ Fonctionnel |
+| Remote Google Drive | ✅ Fonctionnel |
+| FastAPI | ✅ Fonctionnel |
+| Validation Pydantic | ✅ Fonctionnel |
+| API Key | ✅ Fonctionnel |
+| Docker | ✅ Fonctionnel |
+| Nginx | ✅ Fonctionnel |
+| `dvc.yaml` / `dvc repro` | 🚧 À intégrer |
+| MLflow | 🚧 À intégrer |
+| Airflow | 🚧 À intégrer |
+| Prometheus / Grafana | 🚧 À intégrer |
+| CI/CD GitHub Actions | 🚧 À intégrer |
 
 ---
 
 # 🗺️ Architecture cible
-
-À terme, l'architecture recherchée est :
 
 ```text
                     ┌──────────────────┐
@@ -1138,7 +1064,7 @@ Statut :
                              ▼
                     ┌──────────────────┐
                     │       DVC        │
-                    │  Remote storage  │
+                    │  Google Drive    │
                     └────────┬─────────┘
                              │
                              ▼
@@ -1148,9 +1074,12 @@ Statut :
                              │
              ┌───────────────┴───────────────┐
              ▼                               ▼
-      Data processing                  Training ML
+       Data processing                 Training ML
              │                               │
              └───────────────┬───────────────┘
+                             ▼
+                          MLflow
+                             │
                              ▼
                        Modèle versionné
                              │
@@ -1167,37 +1096,39 @@ Statut :
                              ▼
                          Utilisateur
 
-             Monitoring / métriques
-                       │
-                       ▼
-              Prometheus / Grafana
+                    Prometheus / Grafana
+                    Monitoring & métriques
 ```
 
-Cette architecture constitue la **cible du projet** et non son état actuel.
+Cette architecture représente la **cible du projet**.
 
----
+Les briques suivantes sont déjà opérationnelles :
 
-# 📌 État d'avancement
+```text
+Data processing
+      +
+Training ML
+      +
+DVC / Google Drive
+      +
+FastAPI
+      +
+Docker / Nginx
+```
 
-| Composant | Statut |
-|---|---|
-| Ingestion DVF | ✅ Fonctionnel |
-| Conversion CSV → Parquet | ✅ Fonctionnel |
-| Nettoyage métier | ✅ Fonctionnel |
-| Pipeline multi-années | ✅ Fonctionnel |
-| Split temporel | ✅ Fonctionnel |
-| Pipeline sklearn | ✅ Fonctionnel |
-| Évaluation ML | ✅ Fonctionnel |
-| Sérialisation Joblib | ✅ Fonctionnel |
-| Métadonnées modèle | ✅ Fonctionnel |
-| DVC | 🚧 Work in Progress |
-| FastAPI | 🚧 Work in Progress |
-| Sécurisation API | 🚧 Work in Progress |
-| Docker | 🚧 Work in Progress |
-| Airflow | 🚧 Work in Progress |
-| MLflow | 🚧 Work in Progress |
-| Prometheus / Grafana | 🚧 Work in Progress |
-| CI/CD | 🚧 Work in Progress |
+Les prochaines briques permettront progressivement de compléter la chaîne :
+
+```text
+dvc.yaml / dvc repro
+        ↓
+MLflow
+        ↓
+Airflow
+        ↓
+Monitoring
+        ↓
+CI/CD
+```
 
 ---
 
@@ -1205,14 +1136,14 @@ Cette architecture constitue la **cible du projet** et non son état actuel.
 
 Ce dépôt correspond à l'industrialisation d'un projet de Data Science consacré à l'immobilier français.
 
-Une première phase du projet a permis d'explorer les données DVF, de définir les règles de nettoyage et de développer un premier modèle.
+Une première phase du projet a permis :
 
-Ce nouveau dépôt vise à transformer ce travail en **projet MLOps structuré, reproductible et déployable**, en sortant progressivement la logique des notebooks pour la placer dans des modules et scripts Python dédiés.
+- d'explorer les données DVF ;
+- de comprendre leur structure ;
+- de définir les règles de nettoyage ;
+- de construire un dataset exploitable ;
+- de développer et tester un premier modèle.
 
----
+Ce dépôt vise à transformer cette phase exploratoire en un **projet MLOps structuré, reproductible et déployable**.
 
-# 📄 Licence et données
-
-Les données immobilières utilisées proviennent des données ouvertes DVF mises à disposition par l'administration française.
-
-Les données sources ne sont pas incluses directement dans le dépôt Git.
+La logique de production est progressivement sortie des notebooks pour être organisée dans des modules Python réutilisables, des scripts d'exécution, une API et des services conteneurisés.
