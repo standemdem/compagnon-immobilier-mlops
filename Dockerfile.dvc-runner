@@ -13,11 +13,6 @@ COPY pyproject.toml .
 COPY src ./src
 
 RUN python -m pip install --no-cache-dir --upgrade pip \
-    && python -m pip install --no-cache-dir -e . \
-    && python -m pip install --no-cache-dir --force-reinstall \
-        "PyDrive2==1.21.3" \
-        "pyOpenSSL==24.2.1" \
-        "cryptography==43.0.3" \
-        "asyncssh==2.21.1"
+    && python -m pip install --no-cache-dir -e .
 
 CMD ["dvc", "--version"]
