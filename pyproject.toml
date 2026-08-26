@@ -25,7 +25,7 @@ dependencies = [
     "cryptography==43.0.3",
     "asyncssh==2.21.1",
 
-    "mlflow",
+    "mlflow==3.5.0",
 ]
 
 [tool.setuptools.packages.find]

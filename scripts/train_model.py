@@ -1,3 +1,6 @@
+import os
+import mlflow
+
 from pathlib import Path
 import pandas as pd
 
@@ -13,6 +16,16 @@ from compagnon_immo.models.train import (
     save_model,
     save_model_metadata,
 )
+
+###########################################
+# Constantes
+###########################################
+MLFLOW_TRACKING_URI = os.getenv(
+    "MLFLOW_TRACKING_URI",
+    "http://127.0.0.1:5000",
+)
+
+MLFLOW_EXPERIMENT_NAME = "compagnon-immobilier"
 
 DATASET_PATH = Path(
     "data/prod/"
@@ -31,7 +44,23 @@ MODEL_PATH = Path(
     "prix_m2_pipeline_2020_2023.joblib"
 )
 
+############################################
+
 def main() -> None:
+
+    # --------------------------------------------------
+    # MLFlow
+    # --------------------------------------------------
+    mlflow.set_tracking_uri(
+        MLFLOW_TRACKING_URI
+    )
+
+    mlflow.set_experiment(
+        MLFLOW_EXPERIMENT_NAME
+    )
+    # --------------------------------------------------
+    # Chargement du dataset
+    # --------------------------------------------------
     print("=== Chargement du dataset ===")
 
     df = pd.read_parquet(DATASET_PATH)
@@ -98,114 +127,153 @@ def main() -> None:
     # --------------------------------------------------
     # Pipeline
     # --------------------------------------------------
+    print("\n=== MLflow ===")
+    print(f"Tracking URI : {MLFLOW_TRACKING_URI}")
+    print(f"Experiment   : {MLFLOW_EXPERIMENT_NAME}")
 
-    print("\n=== Construction du pipeline ===")
-    pipeline = build_model_pipeline(
-        n_estimators=50,
-        random_state=42,
-        n_jobs=2,
-        max_depth=20,
-        min_samples_leaf=2,
-    )
+    with mlflow.start_run() as run:
 
-
-    # --------------------------------------------------
-    # Entraînement
-    # --------------------------------------------------
-
-    print("\n=== Entraînement ===")
-
-    pipeline.fit(
-        X_train,
-        y_train,
-    )
-
-    print("Entraînement terminé.")
-
-    # --------------------------------------------------
-    # Évaluation
-    # --------------------------------------------------
-
-    print("\n=== Évaluation sur 2024 ===")
-
-    predictions = pipeline.predict(X_test)
-
-    metrics = evaluate_regression(
-        y_test,
-        predictions,
-    )
-
-    print(f"MAE  : {metrics['mae']:.4f}")
-    print(f"RMSE : {metrics['rmse']:.4f}")
-    print(f"R²   : {metrics['r2']:.4f}")
-
-    metadata = {
-        "model_name": "prix_m2_pipeline",
-        "model_type": "RandomForestRegressor",
-
-        "training_years": [
-            2020,
-            2021,
-            2022,
-            2023,
-        ],
-        "test_year": TEST_YEAR,
-
-        "target": "prix_m2",
-
-        "input_features": [
-            "surface_reelle_bati",
-            "nombre_pieces_principales",
-            "latitude",
-            "longitude",
-            "has_dependance",
-            "nom_commune",
-        ],
-
-        "model_features": [
-            "surface_reelle_bati",
-            "nombre_pieces_principales",
-            "latitude",
-            "longitude",
-            "has_dependance",
-            "nb_ventes_commune",
-        ],
-
-        "target_filter": {
-            "lower_quantile": 0.01,
-            "upper_quantile": 0.99,
-            "lower_bound": lower_bound,
-            "upper_bound": upper_bound,
-        },
-
-        "dataset": {
-            "train_rows": len(train),
-            "test_rows": len(test),
-        },
-
-        "metrics": metrics,
-
-        "random_forest_parameters": {
-            "n_estimators": 50,
-            "random_state": 42,
-            "n_jobs": 2,
-            "max_depth": 20,
-            "min_samples_leaf": 2,
-        },
-    }
+        print(f"Run ID       : {run.info.run_id}")
+        print("\n=== Construction du pipeline ===")
+        pipeline = build_model_pipeline(
+            n_estimators=50,
+            random_state=42,
+            n_jobs=2,
+            max_depth=20,
+            min_samples_leaf=2,
+        )
 
 
-    print("\n=== Sauvegarde du modèle ===")
+        # --------------------------------------------------
+        # Entraînement
+        # --------------------------------------------------
 
-    save_model(
-        pipeline=pipeline,
-        output_path=MODEL_PATH,
-    )
+        print("\n=== Entraînement ===")
 
-    save_model_metadata(
-        metadata=metadata,
-        output_path=METADATA_PATH,
-    )
+        pipeline.fit(
+            X_train,
+            y_train,
+        )
+
+        print("Entraînement terminé.")
+
+        # --------------------------------------------------
+        # Évaluation
+        # --------------------------------------------------
+
+        print("\n=== Évaluation sur 2024 ===")
+
+        predictions = pipeline.predict(X_test)
+
+        metrics = evaluate_regression(
+            y_test,
+            predictions,
+        )
+        mlflow.log_metrics(
+            {
+                "mae": metrics["mae"],
+                "rmse": metrics["rmse"],
+                "r2": metrics["r2"],
+            }
+        )
+
+        print(f"MAE  : {metrics['mae']:.4f}")
+        print(f"RMSE : {metrics['rmse']:.4f}")
+        print(f"R²   : {metrics['r2']:.4f}")
+
+        metadata = {
+            "model_name": "prix_m2_pipeline",
+            "model_type": "RandomForestRegressor",
+
+            "training_years": [
+                2020,
+                2021,
+                2022,
+                2023,
+            ],
+            "test_year": TEST_YEAR,
+
+            "target": "prix_m2",
+
+            "input_features": [
+                "surface_reelle_bati",
+                "nombre_pieces_principales",
+                "latitude",
+                "longitude",
+                "has_dependance",
+                "nom_commune",
+            ],
+
+            "model_features": [
+                "surface_reelle_bati",
+                "nombre_pieces_principales",
+                "latitude",
+                "longitude",
+                "has_dependance",
+                "nb_ventes_commune",
+            ],
+
+            "target_filter": {
+                "lower_quantile": 0.01,
+                "upper_quantile": 0.99,
+                "lower_bound": lower_bound,
+                "upper_bound": upper_bound,
+            },
+
+            "dataset": {
+                "train_rows": len(train),
+                "test_rows": len(test),
+            },
+
+            "metrics": metrics,
+
+            "random_forest_parameters": {
+                "n_estimators": 50,
+                "random_state": 42,
+                "n_jobs": 2,
+                "max_depth": 20,
+                "min_samples_leaf": 2,
+            },
+        }
+
+
+        print("\n=== Sauvegarde du modèle ===")
+
+        save_model(
+            pipeline=pipeline,
+            output_path=MODEL_PATH,
+        )
+
+        save_model_metadata(
+            metadata=metadata,
+            output_path=METADATA_PATH,
+        )
+        mlflow.log_artifact(
+            str(MODEL_PATH),
+            artifact_path="model",
+        )
+
+        mlflow.log_artifact(
+            str(METADATA_PATH),
+            artifact_path="metadata",
+        )
+        mlflow.log_params(
+            {
+                "model_type": "RandomForestRegressor",
+                "n_estimators": 50,
+                "random_state": 42,
+                "n_jobs": 2,
+                "max_depth": 20,
+                "min_samples_leaf": 2,
+                "test_year": TEST_YEAR,
+                "lower_quantile": 0.01,
+                "upper_quantile": 0.99,
+                "lower_bound": lower_bound,
+                "upper_bound": upper_bound,
+                "train_rows": len(train),
+                "test_rows": len(test),
+            }
+        )
     
 if __name__ == "__main__":
     main()
