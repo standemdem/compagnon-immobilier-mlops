@@ -29,3 +29,19 @@ services:
       - api
 
     restart: unless-stopped
+  
+  dvc:
+    build:
+      context: .
+      dockerfile: Dockerfile.dvc-runner
+
+    container_name: compagnon_dvc
+
+    working_dir: /workspace
+
+    volumes:
+      - .:/workspace
+      - ${HOME}/.cache/pydrive2fs:/root/.cache/pydrive2fs
+
+    profiles:
+      - tools

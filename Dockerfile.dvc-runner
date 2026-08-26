@@ -1,0 +1,23 @@
+FROM python:3.12.2-slim
+
+WORKDIR /workspace
+
+# Outils système utiles à DVC/Git
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Installation du package Python du projet
+COPY pyproject.toml .
+COPY src ./src
+
+RUN python -m pip install --no-cache-dir --upgrade pip \
+    && python -m pip install --no-cache-dir -e . \
+    && python -m pip install --no-cache-dir --force-reinstall \
+        "PyDrive2==1.21.3" \
+        "pyOpenSSL==24.2.1" \
+        "cryptography==43.0.3" \
+        "asyncssh==2.21.1"
+
+CMD ["dvc", "--version"]
