@@ -1,5 +1,9 @@
 import os
+
 import mlflow
+from mlflow import MlflowClient
+import mlflow.sklearn
+from mlflow.models import infer_signature
 
 from pathlib import Path
 import pandas as pd
@@ -43,6 +47,9 @@ MODEL_PATH = Path(
     "data/models/"
     "prix_m2_pipeline_2020_2023.joblib"
 )
+
+MLFLOW_REGISTERED_MODEL_NAME = "compagnon-immobilier-prix-m2"
+MLFLOW_MODEL_ALIAS = "champion"
 
 ############################################
 
@@ -165,6 +172,11 @@ def main() -> None:
 
         predictions = pipeline.predict(X_test)
 
+        signature = infer_signature(
+            X_test,
+            predictions,
+        )
+
         metrics = evaluate_regression(
             y_test,
             predictions,
@@ -273,6 +285,55 @@ def main() -> None:
                 "train_rows": len(train),
                 "test_rows": len(test),
             }
+        )
+
+        print("\n=== Enregistrement MLflow Model Registry ===")
+
+        mlflow.sklearn.log_model(
+            sk_model=pipeline,
+            name="model",
+            signature=signature,
+            input_example=X_test.head(5),
+            registered_model_name=MLFLOW_REGISTERED_MODEL_NAME,
+            serialization_format="cloudpickle",
+        )
+
+        client = MlflowClient()
+
+        model_versions = client.search_model_versions(
+            filter_string=(
+                f"name='{MLFLOW_REGISTERED_MODEL_NAME}' "
+                f"AND run_id='{run.info.run_id}'"
+            )
+        )
+
+        if len(model_versions) != 1:
+            raise RuntimeError(
+                "Impossible d'identifier de manière unique "
+                "la version MLflow créée par ce run."
+            )
+
+        registered_version = model_versions[0]
+
+        client.set_registered_model_alias(
+            name=MLFLOW_REGISTERED_MODEL_NAME,
+            alias=MLFLOW_MODEL_ALIAS,
+            version=registered_version.version,
+        )
+
+        print(
+            f"Modèle MLflow enregistré : "
+            f"{MLFLOW_REGISTERED_MODEL_NAME}"
+        )
+
+        print(
+            f"Version MLflow : "
+            f"{registered_version.version}"
+        )
+
+        print(
+            f"Alias '{MLFLOW_MODEL_ALIAS}' "
+            f"→ version {registered_version.version}"
         )
     
 if __name__ == "__main__":

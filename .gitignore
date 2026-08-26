@@ -50,6 +50,8 @@ data/prod/*
 data/models/*
 !data/models/.gitkeep
 
+*:Zone.Identifier
+
 # ============================================
 # Python tooling / tests
 # ============================================
