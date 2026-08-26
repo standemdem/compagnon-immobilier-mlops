@@ -1,0 +1,98 @@
+stages:
+
+  prepare:
+    cmd: python scripts/prepare_raw_data.py
+    deps:
+      - scripts/prepare_raw_data.py
+      - src/compagnon_immo/data/ingestion.py
+      - src/compagnon_immo/data/io.py
+      - data/raw
+    outs:
+      - data/parquet/full_2020.parquet
+      - data/parquet/full_2021.parquet
+      - data/parquet/full_2022.parquet
+      - data/parquet/full_2023.parquet
+      - data/parquet/full_2024.parquet
+
+
+  preprocess_2020:
+    cmd: python scripts/preprocess_data.py --year 2020
+    deps:
+      - scripts/preprocess_data.py
+      - src/compagnon_immo/data/cleaning.py
+      - src/compagnon_immo/data/io.py
+      - data/parquet/full_2020.parquet
+    outs:
+      - data/processed/dvf_appartements_vente_2020.parquet.gz
+
+
+  preprocess_2021:
+    cmd: python scripts/preprocess_data.py --year 2021
+    deps:
+      - scripts/preprocess_data.py
+      - src/compagnon_immo/data/cleaning.py
+      - src/compagnon_immo/data/io.py
+      - data/parquet/full_2021.parquet
+    outs:
+      - data/processed/dvf_appartements_vente_2021.parquet.gz
+
+
+  preprocess_2022:
+    cmd: python scripts/preprocess_data.py --year 2022
+    deps:
+      - scripts/preprocess_data.py
+      - src/compagnon_immo/data/cleaning.py
+      - src/compagnon_immo/data/io.py
+      - data/parquet/full_2022.parquet
+    outs:
+      - data/processed/dvf_appartements_vente_2022.parquet.gz
+
+
+  preprocess_2023:
+    cmd: python scripts/preprocess_data.py --year 2023
+    deps:
+      - scripts/preprocess_data.py
+      - src/compagnon_immo/data/cleaning.py
+      - src/compagnon_immo/data/io.py
+      - data/parquet/full_2023.parquet
+    outs:
+      - data/processed/dvf_appartements_vente_2023.parquet.gz
+
+
+  preprocess_2024:
+    cmd: python scripts/preprocess_data.py --year 2024
+    deps:
+      - scripts/preprocess_data.py
+      - src/compagnon_immo/data/cleaning.py
+      - src/compagnon_immo/data/io.py
+      - data/parquet/full_2024.parquet
+    outs:
+      - data/processed/dvf_appartements_vente_2024.parquet.gz
+
+
+  build_dataset:
+    cmd: python scripts/build_model_dataset.py
+    deps:
+      - scripts/build_model_dataset.py
+      - src/compagnon_immo/data/build_dataset.py
+      - src/compagnon_immo/data/io.py
+      - data/processed/dvf_appartements_vente_2020.parquet.gz
+      - data/processed/dvf_appartements_vente_2021.parquet.gz
+      - data/processed/dvf_appartements_vente_2022.parquet.gz
+      - data/processed/dvf_appartements_vente_2023.parquet.gz
+      - data/processed/dvf_appartements_vente_2024.parquet.gz
+    outs:
+      - data/prod/dvf_appartements_model_base_2020_2024.parquet.gz
+
+
+  train:
+    cmd: python scripts/train_model.py
+    deps:
+      - scripts/train_model.py
+      - src/compagnon_immo/models/train.py
+      - src/compagnon_immo/models/evaluate.py
+      - src/compagnon_immo/models/transformers.py
+      - data/prod/dvf_appartements_model_base_2020_2024.parquet.gz
+    outs:
+      - data/models/prix_m2_pipeline_2020_2023.joblib
+      - data/models/prix_m2_pipeline_2020_2023.metadata.json

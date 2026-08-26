@@ -1,0 +1,235 @@
+schema: '2.0'
+stages:
+  prepare:
+    cmd: python scripts/prepare_raw_data.py
+    deps:
+    - path: data/raw
+      hash: md5
+      md5: a9bfc460b7b2a6adb9fbd03c7ca3f43b.dir
+      size: 494964241
+      nfiles: 5
+    - path: scripts/prepare_raw_data.py
+      hash: md5
+      md5: 1fdf2240f8ef617b87b4f2e7671c3e78
+      size: 608
+    - path: src/compagnon_immo/data/ingestion.py
+      hash: md5
+      md5: 3e233cac85e87a4d04a883c200057fa5
+      size: 1645
+    - path: src/compagnon_immo/data/io.py
+      hash: md5
+      md5: 7cd0a9fe3488504c0eb34b098034a606
+      size: 955
+    outs:
+    - path: data/parquet/full_2020.parquet
+      hash: md5
+      md5: 2dedebe6b08fd586213b09cbcac288ec
+      size: 80048183
+    - path: data/parquet/full_2021.parquet
+      hash: md5
+      md5: 8c95b2ff99c023d3b05e7ec4f61bad7c
+      size: 171946168
+    - path: data/parquet/full_2022.parquet
+      hash: md5
+      md5: 0e2689a26cda596fb4f59c8a892e2644
+      size: 171922313
+    - path: data/parquet/full_2023.parquet
+      hash: md5
+      md5: 0478100a5fbd5f2494c89ef6f917c415
+      size: 143438980
+    - path: data/parquet/full_2024.parquet
+      hash: md5
+      md5: 431f1c068605bb7c535fdf91fe0e11c7
+      size: 130328962
+  preprocess_2020:
+    cmd: python scripts/preprocess_data.py --year 2020
+    deps:
+    - path: data/parquet/full_2020.parquet
+      hash: md5
+      md5: 2dedebe6b08fd586213b09cbcac288ec
+      size: 80048183
+    - path: scripts/preprocess_data.py
+      hash: md5
+      md5: 1234bac3d552788daa9e022b951617bf
+      size: 1513
+    - path: src/compagnon_immo/data/cleaning.py
+      hash: md5
+      md5: 543ef04a2cf39832b9df737a964c8073
+      size: 3908
+    - path: src/compagnon_immo/data/io.py
+      hash: md5
+      md5: 7cd0a9fe3488504c0eb34b098034a606
+      size: 955
+    outs:
+    - path: data/processed/dvf_appartements_vente_2020.parquet.gz
+      hash: md5
+      md5: f48b35ae783629bfe76be45aa9c4320e
+      size: 7384828
+  preprocess_2021:
+    cmd: python scripts/preprocess_data.py --year 2021
+    deps:
+    - path: data/parquet/full_2021.parquet
+      hash: md5
+      md5: 8c95b2ff99c023d3b05e7ec4f61bad7c
+      size: 171946168
+    - path: scripts/preprocess_data.py
+      hash: md5
+      md5: 1234bac3d552788daa9e022b951617bf
+      size: 1513
+    - path: src/compagnon_immo/data/cleaning.py
+      hash: md5
+      md5: 543ef04a2cf39832b9df737a964c8073
+      size: 3908
+    - path: src/compagnon_immo/data/io.py
+      hash: md5
+      md5: 7cd0a9fe3488504c0eb34b098034a606
+      size: 955
+    outs:
+    - path: data/processed/dvf_appartements_vente_2021.parquet.gz
+      hash: md5
+      md5: f72eb658fbda8dc0de952410baa998a2
+      size: 14679660
+  preprocess_2022:
+    cmd: python scripts/preprocess_data.py --year 2022
+    deps:
+    - path: data/parquet/full_2022.parquet
+      hash: md5
+      md5: 0e2689a26cda596fb4f59c8a892e2644
+      size: 171922313
+    - path: scripts/preprocess_data.py
+      hash: md5
+      md5: 1234bac3d552788daa9e022b951617bf
+      size: 1513
+    - path: src/compagnon_immo/data/cleaning.py
+      hash: md5
+      md5: 543ef04a2cf39832b9df737a964c8073
+      size: 3908
+    - path: src/compagnon_immo/data/io.py
+      hash: md5
+      md5: 7cd0a9fe3488504c0eb34b098034a606
+      size: 955
+    outs:
+    - path: data/processed/dvf_appartements_vente_2022.parquet.gz
+      hash: md5
+      md5: c71cee25aceada55878a06eccbc81b99
+      size: 14891890
+  preprocess_2023:
+    cmd: python scripts/preprocess_data.py --year 2023
+    deps:
+    - path: data/parquet/full_2023.parquet
+      hash: md5
+      md5: 0478100a5fbd5f2494c89ef6f917c415
+      size: 143438980
+    - path: scripts/preprocess_data.py
+      hash: md5
+      md5: 1234bac3d552788daa9e022b951617bf
+      size: 1513
+    - path: src/compagnon_immo/data/cleaning.py
+      hash: md5
+      md5: 543ef04a2cf39832b9df737a964c8073
+      size: 3908
+    - path: src/compagnon_immo/data/io.py
+      hash: md5
+      md5: 7cd0a9fe3488504c0eb34b098034a606
+      size: 955
+    outs:
+    - path: data/processed/dvf_appartements_vente_2023.parquet.gz
+      hash: md5
+      md5: 229927bc66c5868085e368f9ff7027b9
+      size: 12275716
+  preprocess_2024:
+    cmd: python scripts/preprocess_data.py --year 2024
+    deps:
+    - path: data/parquet/full_2024.parquet
+      hash: md5
+      md5: 431f1c068605bb7c535fdf91fe0e11c7
+      size: 130328962
+    - path: scripts/preprocess_data.py
+      hash: md5
+      md5: 1234bac3d552788daa9e022b951617bf
+      size: 1513
+    - path: src/compagnon_immo/data/cleaning.py
+      hash: md5
+      md5: 543ef04a2cf39832b9df737a964c8073
+      size: 3908
+    - path: src/compagnon_immo/data/io.py
+      hash: md5
+      md5: 7cd0a9fe3488504c0eb34b098034a606
+      size: 955
+    outs:
+    - path: data/processed/dvf_appartements_vente_2024.parquet.gz
+      hash: md5
+      md5: e6478dc4d3b6a0d099369d17d1e34502
+      size: 11036281
+  build_dataset:
+    cmd: python scripts/build_model_dataset.py
+    deps:
+    - path: data/processed/dvf_appartements_vente_2020.parquet.gz
+      hash: md5
+      md5: f48b35ae783629bfe76be45aa9c4320e
+      size: 7384828
+    - path: data/processed/dvf_appartements_vente_2021.parquet.gz
+      hash: md5
+      md5: f72eb658fbda8dc0de952410baa998a2
+      size: 14679660
+    - path: data/processed/dvf_appartements_vente_2022.parquet.gz
+      hash: md5
+      md5: c71cee25aceada55878a06eccbc81b99
+      size: 14891890
+    - path: data/processed/dvf_appartements_vente_2023.parquet.gz
+      hash: md5
+      md5: 229927bc66c5868085e368f9ff7027b9
+      size: 12275716
+    - path: data/processed/dvf_appartements_vente_2024.parquet.gz
+      hash: md5
+      md5: e6478dc4d3b6a0d099369d17d1e34502
+      size: 11036281
+    - path: scripts/build_model_dataset.py
+      hash: md5
+      md5: 2b87397a9490233b35076e38ff1ac71f
+      size: 1814
+    - path: src/compagnon_immo/data/build_dataset.py
+      hash: md5
+      md5: 1b618c2da0d605e757ab965aa41e3248
+      size: 6075
+    - path: src/compagnon_immo/data/io.py
+      hash: md5
+      md5: 7cd0a9fe3488504c0eb34b098034a606
+      size: 955
+    outs:
+    - path: data/prod/dvf_appartements_model_base_2020_2024.parquet.gz
+      hash: md5
+      md5: 9b44c47cdcfb637f342a35260e3d0850
+      size: 27754003
+  train:
+    cmd: python scripts/train_model.py
+    deps:
+    - path: data/prod/dvf_appartements_model_base_2020_2024.parquet.gz
+      hash: md5
+      md5: 9b44c47cdcfb637f342a35260e3d0850
+      size: 27754003
+    - path: scripts/train_model.py
+      hash: md5
+      md5: e71327d58710308f04b41693f391bd62
+      size: 4754
+    - path: src/compagnon_immo/models/evaluate.py
+      hash: md5
+      md5: 8bed8a77dc081231973a372a8cb16079
+      size: 629
+    - path: src/compagnon_immo/models/train.py
+      hash: md5
+      md5: 7e7092359def60a418605c182f757343
+      size: 5287
+    - path: src/compagnon_immo/models/transformers.py
+      hash: md5
+      md5: 4fca4ba79b07a98f0b210a56e730be01
+      size: 2348
+    outs:
+    - path: data/models/prix_m2_pipeline_2020_2023.joblib
+      hash: md5
+      md5: 57fb2bc4164380db28a9fd21637f4d21
+      size: 632640346
+    - path: data/models/prix_m2_pipeline_2020_2023.metadata.json
+      hash: md5
+      md5: 646275cc1757342bc15763ac30449e96
+      size: 1148
