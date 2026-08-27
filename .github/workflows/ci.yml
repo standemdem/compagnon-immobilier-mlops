@@ -35,3 +35,7 @@ jobs:
       - name: Exécution des tests
         run: |
           docker compose --profile test run --rm tests
+
+      - name: Construction de l'image API
+        run: |
+          docker compose build api
