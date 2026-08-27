@@ -12,6 +12,13 @@ services:
     expose:
       - "8000"
 
+    volumes:
+      - ./data/models:/app/data/models:ro
+      
+    depends_on:
+      dvc-init:
+        condition: service_completed_successfully
+
     restart: unless-stopped
 
   nginx:
@@ -30,6 +37,21 @@ services:
 
     restart: unless-stopped
   
+  dvc-init:
+      build:
+        context: .
+        dockerfile: Dockerfile.dvc-runner
+
+      working_dir: /workspace
+
+      volumes:
+        - .:/workspace
+        - ${HOME}/.cache/pydrive2fs:/root/.cache/pydrive2fs
+
+      command: ["dvc", "pull"]
+
+      restart: "no"
+
   dvc:
     build:
       context: .
