@@ -1,5 +1,5 @@
 import os
-
+import yaml
 import mlflow
 from mlflow import MlflowClient
 import mlflow.sklearn
@@ -24,6 +24,9 @@ from compagnon_immo.models.train import (
 ###########################################
 # Constantes
 ###########################################
+
+PARAMS_PATH = Path("params.yaml")
+
 MLFLOW_TRACKING_URI = os.getenv(
     "MLFLOW_TRACKING_URI",
     "http://127.0.0.1:5000",
@@ -41,17 +44,25 @@ METADATA_PATH = Path(
     "prix_m2_pipeline_2020_2023.metadata.json"
 )
 
-TEST_YEAR = 2024
-
 MODEL_PATH = Path(
     "data/models/"
     "prix_m2_pipeline_2020_2023.joblib"
 )
 
 MLFLOW_REGISTERED_MODEL_NAME = "compagnon-immobilier-prix-m2"
-MLFLOW_MODEL_ALIAS = "champion"
 
 ############################################
+
+with PARAMS_PATH.open("r", encoding="utf-8",) as file:
+    config = yaml.safe_load(file)
+
+model_config = config["model"]
+model_params = model_config["params"]
+
+test_year = config["training"]["test_year"]
+
+lower_quantile = (config["target_filter"]["lower_quantile"])
+upper_quantile = (config["target_filter"]["upper_quantile"])
 
 def main() -> None:
 
@@ -85,7 +96,7 @@ def main() -> None:
 
     train, test = temporal_train_test_split(
         df,
-        test_year=TEST_YEAR,
+        test_year=test_year,
     )
 
     print(f"Train : {len(train)} lignes")
@@ -98,7 +109,9 @@ def main() -> None:
     print("\n=== Filtrage de la cible ===")
 
     lower_bound, upper_bound = compute_target_bounds(
-        train
+        train, 
+        lower_quantile=lower_quantile,
+        upper_quantile=upper_quantile,
     )
 
     print(f"Borne basse : {lower_bound:.2f}")
@@ -142,13 +155,7 @@ def main() -> None:
 
         print(f"Run ID       : {run.info.run_id}")
         print("\n=== Construction du pipeline ===")
-        pipeline = build_model_pipeline(
-            n_estimators=50,
-            random_state=42,
-            n_jobs=2,
-            max_depth=20,
-            min_samples_leaf=2,
-        )
+        pipeline = build_model_pipeline(**model_params)
 
 
         # --------------------------------------------------
@@ -168,7 +175,7 @@ def main() -> None:
         # Évaluation
         # --------------------------------------------------
 
-        print("\n=== Évaluation sur 2024 ===")
+        print(f"\n=== Évaluation sur {test_year} ===")
 
         predictions = pipeline.predict(X_test)
 
@@ -203,7 +210,7 @@ def main() -> None:
                 2022,
                 2023,
             ],
-            "test_year": TEST_YEAR,
+            "test_year": test_year,
 
             "target": "prix_m2",
 
@@ -226,8 +233,8 @@ def main() -> None:
             ],
 
             "target_filter": {
-                "lower_quantile": 0.01,
-                "upper_quantile": 0.99,
+                "lower_quantile": lower_quantile,
+                "upper_quantile": upper_quantile,
                 "lower_bound": lower_bound,
                 "upper_bound": upper_bound,
             },
@@ -239,12 +246,9 @@ def main() -> None:
 
             "metrics": metrics,
 
-            "random_forest_parameters": {
-                "n_estimators": 50,
-                "random_state": 42,
-                "n_jobs": 2,
-                "max_depth": 20,
-                "min_samples_leaf": 2,
+            "model": {
+                "type": model_config["type"],
+                "parameters": model_params,
             },
         }
 
@@ -271,15 +275,11 @@ def main() -> None:
         )
         mlflow.log_params(
             {
-                "model_type": "RandomForestRegressor",
-                "n_estimators": 50,
-                "random_state": 42,
-                "n_jobs": 2,
-                "max_depth": 20,
-                "min_samples_leaf": 2,
-                "test_year": TEST_YEAR,
-                "lower_quantile": 0.01,
-                "upper_quantile": 0.99,
+                "model_type": model_config["type"],
+                **model_params,
+                "test_year": test_year,
+                "lower_quantile": lower_quantile,
+                "upper_quantile": upper_quantile,
                 "lower_bound": lower_bound,
                 "upper_bound": upper_bound,
                 "train_rows": len(train),
@@ -315,12 +315,7 @@ def main() -> None:
 
         registered_version = model_versions[0]
 
-        client.set_registered_model_alias(
-            name=MLFLOW_REGISTERED_MODEL_NAME,
-            alias=MLFLOW_MODEL_ALIAS,
-            version=registered_version.version,
-        )
-
+        
         print(
             f"Modèle MLflow enregistré : "
             f"{MLFLOW_REGISTERED_MODEL_NAME}"
@@ -331,10 +326,6 @@ def main() -> None:
             f"{registered_version.version}"
         )
 
-        print(
-            f"Alias '{MLFLOW_MODEL_ALIAS}' "
-            f"→ version {registered_version.version}"
-        )
-    
+        
 if __name__ == "__main__":
     main()

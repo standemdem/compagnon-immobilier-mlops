@@ -35,6 +35,8 @@ pipeline = [
     "asyncssh==2.21.1",
 
     "mlflow==3.5.0",
+
+    "PyYAML==6.0.3",
 ]
 
 test = [

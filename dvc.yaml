@@ -7,6 +7,7 @@ stages:
       - src/compagnon_immo/data/ingestion.py
       - src/compagnon_immo/data/io.py
       - data/raw
+
     outs:
       - data/parquet/full_2020.parquet
       - data/parquet/full_2021.parquet
@@ -93,6 +94,12 @@ stages:
       - src/compagnon_immo/models/evaluate.py
       - src/compagnon_immo/models/transformers.py
       - data/prod/dvf_appartements_model_base_2020_2024.parquet.gz
+
+    params:
+    - model
+    - training
+    - target_filter
+    
     outs:
       - data/models/prix_m2_pipeline_2020_2023.joblib
       - data/models/prix_m2_pipeline_2020_2023.metadata.json
