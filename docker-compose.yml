@@ -116,3 +116,23 @@ services:
       - dvc
 
     restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v3.14.0
+
+    container_name: compagnon_prometheus
+
+    ports:
+      - "9090:9090"
+
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+
+    depends_on:
+      - api
+
+    restart: unless-stopped

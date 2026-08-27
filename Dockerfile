@@ -6,7 +6,7 @@ COPY pyproject.toml .
 COPY src ./src
 COPY app ./app
 
-RUN pip install --no-cache-dir .
+RUN python -m pip install --no-cache-dir -e ".[api]"
 
 COPY data/models ./data/models
 

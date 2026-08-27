@@ -1,8 +1,16 @@
+import time
 import json
 from pathlib import Path
 
 import pandas as pd
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, Response
+
+from prometheus_client import (
+    CONTENT_TYPE_LATEST,
+    Counter,
+    Histogram,
+    generate_latest,
+)
 
 from app.model_loader import get_model
 from app.schemas import (
@@ -12,11 +20,26 @@ from app.schemas import (
 from app.security import verify_api_key
 
 
+
 METADATA_PATH = Path(
     "data/models/"
     "prix_m2_pipeline_2020_2023.metadata.json"
 )
 
+PREDICTION_COUNTER = Counter(
+    "compagnon_predictions_total",
+    "Nombre total de prédictions effectuées.",
+)
+
+PREDICTION_ERRORS = Counter(
+    "compagnon_prediction_errors_total",
+    "Nombre total d'erreurs pendant les prédictions.",
+)
+
+PREDICTION_LATENCY = Histogram(
+    "compagnon_prediction_duration_seconds",
+    "Durée d'exécution des prédictions.",
+)
 
 app = FastAPI(
     title="Compagnon Immobilier API",
@@ -84,12 +107,41 @@ def predict(
     Prédit le prix au m² d'un appartement.
     """
 
-    model = get_model()
+    start_time = time.perf_counter()
 
-    input_df = pd.DataFrame([request.model_dump()])
+    try:
+        model = get_model()
 
-    prediction = model.predict(input_df)[0]
+        input_df = pd.DataFrame([
+            request.model_dump()
+        ])
 
-    return PredictionResponse(
-        prix_m2=float(prediction),
+        prediction = model.predict(input_df)[0]
+
+        PREDICTION_COUNTER.inc()
+
+        return PredictionResponse(
+            prix_m2=float(prediction),
+        )
+
+    except Exception:
+        PREDICTION_ERRORS.inc()
+        raise
+
+    finally:
+        duration = (
+            time.perf_counter() - start_time
+        )
+
+        PREDICTION_LATENCY.observe(duration)
+
+@app.get("/metrics")
+def metrics() -> Response:
+    """
+    Expose les métriques Prometheus de l'API.
+    """
+
+    return Response(
+        content=generate_latest(),
+        media_type=CONTENT_TYPE_LATEST,
     )
