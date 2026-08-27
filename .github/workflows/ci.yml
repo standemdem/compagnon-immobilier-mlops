@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+
+    env:
+      API_KEY: test_ci_key
+
+    steps:
+      - name: Récupération du dépôt
+        uses: actions/checkout@v4
+
+      - name: Création du fichier .env
+        run: |
+          cat <<EOF > .env
+          API_KEY=${API_KEY}
+          AIRFLOW_UID=1000
+          DOCKER_GID=999
+          EOF
+
+      - name: Construction de l'image de tests
+        run: |
+          docker compose --profile test build tests
+
+      - name: Exécution des tests
+        run: |
+          docker compose --profile test run --rm tests
