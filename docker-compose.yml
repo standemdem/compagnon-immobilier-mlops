@@ -49,8 +49,7 @@ services:
     depends_on:
       - mlflow
 
-    profiles:
-      - tools
+    command: ["sleep", "infinity"]
   
   mlflow:
     image: ghcr.io/mlflow/mlflow:v3.5.0
@@ -76,5 +75,44 @@ services:
       - sqlite:////mlflow/mlflow.db
       - --default-artifact-root
       - /mlflow/artifacts
+
+    restart: unless-stopped
+    
+  airflow:
+    build:
+      context: .
+      dockerfile: Dockerfile.airflow
+
+    container_name: compagnon_airflow
+
+    user: "${AIRFLOW_UID}:0"
+    
+    group_add:
+      - "${DOCKER_GID}"
+
+    ports:
+      - "8081:8080"
+
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/logs:/opt/airflow/logs
+      - /var/run/docker.sock:/var/run/docker.sock
+
+    environment:
+      AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/dags
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+
+      AIRFLOW__DAG_PROCESSOR__REFRESH_INTERVAL: "10"
+      AIRFLOW__DAG_PROCESSOR__MIN_FILE_PROCESS_INTERVAL: "10"
+
+    command: >
+      bash -c "
+      airflow db migrate &&
+      airflow standalone
+      "
+
+    depends_on:
+      - mlflow
+      - dvc
 
     restart: unless-stopped
