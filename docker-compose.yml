@@ -181,6 +181,23 @@ services:
 
     restart: unless-stopped
 
+  tests:
+      build:
+        context: .
+        dockerfile: Dockerfile.test
+
+      env_file:
+        - .env
+
+      volumes:
+        - ./tests:/app/tests:ro
+        - ./app:/app/app:ro
+        - ./src:/app/src:ro
+
+      profiles:
+        - test
 
 volumes:
   grafana_data:
+
+  

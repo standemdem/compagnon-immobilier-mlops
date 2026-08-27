@@ -1,0 +1,46 @@
+FROM python:3.12.2-slim
+
+WORKDIR /app
+
+# --------------------------------------------------
+# Dépendances Python
+# Cette couche ne change que si pyproject.toml change.
+# --------------------------------------------------
+
+COPY pyproject.toml .
+
+RUN python -m pip install --no-cache-dir --upgrade pip \
+    && python - <<'PY'
+import tomllib
+from pathlib import Path
+
+data = tomllib.loads(Path("pyproject.toml").read_text())
+
+deps = []
+deps.extend(data["project"]["dependencies"])
+deps.extend(data["project"]["optional-dependencies"]["api"])
+deps.extend(data["project"]["optional-dependencies"]["pipeline"])
+deps.extend(data["project"]["optional-dependencies"]["test"])
+
+Path("/tmp/requirements.txt").write_text(
+    "\n".join(deps)
+)
+PY
+
+RUN python -m pip install \
+    --no-cache-dir \
+    -r /tmp/requirements.txt
+
+# --------------------------------------------------
+# Code
+# Ces couches peuvent changer sans réinstaller
+# les dépendances.
+# --------------------------------------------------
+
+COPY src ./src
+COPY app ./app
+COPY tests ./tests
+
+ENV PYTHONPATH="/app/src:/app"
+
+CMD ["pytest", "-v", "tests"]

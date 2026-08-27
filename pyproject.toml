@@ -37,5 +37,10 @@ pipeline = [
     "mlflow==3.5.0",
 ]
 
+test = [
+    "pytest==8.4.2",
+    "httpx==0.28.1",
+]
+
 [tool.setuptools.packages.find]
 where = ["src"]

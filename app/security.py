@@ -10,7 +10,7 @@ API_KEY = os.getenv("API_KEY")
 
 
 def verify_api_key(
-    x_api_key: str = Header(...),
+    x_api_key: str | None = Header(default=None),
 ) -> str:
     """
     Vérifie la clé API transmise dans le header x-api-key.
@@ -21,7 +21,7 @@ def verify_api_key(
             "La variable d'environnement API_KEY n'est pas définie."
         )
 
-    if x_api_key != API_KEY:
+    if x_api_key is None or x_api_key != API_KEY:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Unauthorized",

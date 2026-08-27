@@ -4,9 +4,10 @@ WORKDIR /app
 
 COPY pyproject.toml .
 COPY src ./src
-COPY app ./app
 
 RUN python -m pip install --no-cache-dir -e ".[api]"
+
+COPY app ./app
 
 EXPOSE 8000
 
