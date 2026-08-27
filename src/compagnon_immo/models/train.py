@@ -3,7 +3,7 @@ import joblib
 import json
 
 from pathlib import Path
-from sklearn.ensemble import RandomForestRegressor
+from sklearn.ensemble import (RandomForestRegressor, HistGradientBoostingRegressor)
 from sklearn.pipeline import Pipeline
 
 from compagnon_immo.models.transformers import (
@@ -152,11 +152,8 @@ def split_features_target(
 
 
 def build_model_pipeline(
-   random_state: int = 42,
-    n_estimators: int = 100,
-    n_jobs: int = -1,
-    max_depth: int | None = None,
-    min_samples_leaf: int = 1,
+    model_type: str,
+    model_params: dict,
 ) -> Pipeline:
     """
     Construit le pipeline sklearn complet.
@@ -164,8 +161,23 @@ def build_model_pipeline(
     Étapes :
     1. création de nb_ventes_commune ;
     2. sélection des features numériques finales ;
-    3. entraînement du Random Forest.
+    3. entraînement du modèle configuré.
     """
+
+    if model_type == "random_forest":
+        estimator = RandomForestRegressor(
+            **model_params
+        )
+
+    elif model_type == "hist_gradient_boosting":
+        estimator = HistGradientBoostingRegressor(
+            **model_params
+        )
+
+    else:
+        raise ValueError(
+            f"Type de modèle non supporté : {model_type}"
+        )
 
     pipeline = Pipeline(
         steps=[
@@ -181,13 +193,7 @@ def build_model_pipeline(
             ),
             (
                 "model",
-                RandomForestRegressor(
-                    n_estimators=n_estimators,
-                    random_state=random_state,
-                    n_jobs=n_jobs,
-                    max_depth=max_depth,
-                    min_samples_leaf=min_samples_leaf,
-                ),
+                estimator,
             ),
         ]
     )

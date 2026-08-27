@@ -57,7 +57,8 @@ with PARAMS_PATH.open("r", encoding="utf-8",) as file:
     config = yaml.safe_load(file)
 
 model_config = config["model"]
-model_params = model_config["params"]
+model_type = model_config["type"]
+model_params = model_config[model_type]
 
 test_year = config["training"]["test_year"]
 
@@ -155,7 +156,10 @@ def main() -> None:
 
         print(f"Run ID       : {run.info.run_id}")
         print("\n=== Construction du pipeline ===")
-        pipeline = build_model_pipeline(**model_params)
+        pipeline = build_model_pipeline(
+            model_type=model_type,
+            model_params=model_params,
+        )
 
 
         # --------------------------------------------------
@@ -247,7 +251,7 @@ def main() -> None:
             "metrics": metrics,
 
             "model": {
-                "type": model_config["type"],
+                "type": model_type,
                 "parameters": model_params,
             },
         }
@@ -275,7 +279,7 @@ def main() -> None:
         )
         mlflow.log_params(
             {
-                "model_type": model_config["type"],
+                "model_type": model_type,
                 **model_params,
                 "test_year": test_year,
                 "lower_quantile": lower_quantile,

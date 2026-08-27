@@ -47,8 +47,18 @@ services:
       volumes:
         - .:/workspace
         - ${HOME}/.cache/pydrive2fs:/root/.cache/pydrive2fs
+      environment:
+        GIT_USER_NAME: ${GIT_USER_NAME}
+        GIT_USER_EMAIL: ${GIT_USER_EMAIL}
 
-      command: ["dvc", "pull"]
+      command:
+        - sh
+        - -c
+        - |
+          git config --global --add safe.directory /workspace
+          git config --global user.name "$GIT_USER_NAME"
+          git config --global user.email "$GIT_USER_EMAIL"
+          exec dvc pull
 
       restart: "no"
 
@@ -66,12 +76,21 @@ services:
       - ${HOME}/.cache/pydrive2fs:/root/.cache/pydrive2fs
 
     environment:
-     MLFLOW_TRACKING_URI: http://mlflow:5000
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      GIT_USER_NAME: ${GIT_USER_NAME}
+      GIT_USER_EMAIL: ${GIT_USER_EMAIL}
 
     depends_on:
       - mlflow
 
-    command: ["sleep", "infinity"]
+    command:
+      - sh
+      - -c
+      - |
+        git config --global --add safe.directory /workspace
+        git config --global user.name "$GIT_USER_NAME"
+        git config --global user.email "$GIT_USER_EMAIL"
+        exec sleep infinity
   
   mlflow:
     image: ghcr.io/mlflow/mlflow:v3.5.0

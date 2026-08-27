@@ -210,16 +210,16 @@ stages:
       size: 27754003
     - path: scripts/train_model.py
       hash: md5
-      md5: f1996367ad3f902a151badb1b3fd0d80
-      size: 8449
+      md5: a216d955707dbfeed350de9aeaa1e82f
+      size: 8534
     - path: src/compagnon_immo/models/evaluate.py
       hash: md5
       md5: 8bed8a77dc081231973a372a8cb16079
       size: 629
     - path: src/compagnon_immo/models/train.py
       hash: md5
-      md5: 7e7092359def60a418605c182f757343
-      size: 5287
+      md5: 12bfff7569c9f762abd270e0e050488f
+      size: 5335
     - path: src/compagnon_immo/models/transformers.py
       hash: md5
       md5: 4fca4ba79b07a98f0b210a56e730be01
@@ -228,12 +228,18 @@ stages:
       params.yaml:
         model:
           type: random_forest
-          params:
+          random_forest:
             n_estimators: 60
             random_state: 42
             n_jobs: 2
             max_depth: 20
             min_samples_leaf: 2
+          hist_gradient_boosting:
+            max_iter: 100
+            learning_rate: 0.1
+            max_depth: 20
+            min_samples_leaf: 20
+            random_state: 42
         target_filter:
           lower_quantile: 0.01
           upper_quantile: 0.99
