@@ -136,3 +136,29 @@ services:
       - api
 
     restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:13.2.0
+
+    container_name: compagnon_grafana
+
+    ports:
+      - "3000:3000"
+
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+
+    depends_on:
+      - prometheus
+
+    restart: unless-stopped
+
+
+volumes:
+  grafana_data:
