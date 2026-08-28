@@ -1,8 +1,9 @@
 import time
 import json
 from pathlib import Path
-
 import pandas as pd
+
+from contextlib import asynccontextmanager
 from fastapi import Depends, FastAPI, Response
 
 from prometheus_client import (
@@ -41,6 +42,16 @@ PREDICTION_LATENCY = Histogram(
     "Durée d'exécution des prédictions.",
 )
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Charge le modèle MLflow au démarrage de l'API.
+    """
+
+    get_model()
+
+    yield
+
 app = FastAPI(
     title="Compagnon Immobilier API",
     description=(
@@ -48,6 +59,7 @@ app = FastAPI(
         "des appartements en France métropolitaine."
     ),
     version="0.1.0",
+    lifespan=lifespan,
 )
 
 @app.get("/")
