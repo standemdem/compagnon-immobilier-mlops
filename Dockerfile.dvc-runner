@@ -1,12 +1,18 @@
 FROM python:3.12.2-slim
 
+ARG DVC_UID=1000
+ARG DVC_GID=1000
+
+RUN groupadd -g ${DVC_GID} dvc \
+    && useradd -m -u ${DVC_UID} -g ${DVC_GID} dvc
+
 WORKDIR /workspace
 
 # Outils système utiles à DVC/Git
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-        git \
-    && rm -rf /var/lib/apt/lists/*
+    && apt-get install -y --no-install-recommends git \
+    && rm -rf /var/lib/apt/lists/* \
+    && git config --system --add safe.directory /workspace
 
 # Installation du package Python du projet
 COPY pyproject.toml .
@@ -14,5 +20,7 @@ COPY src ./src
 
 RUN python -m pip install --no-cache-dir --upgrade pip \
     && python -m pip install --no-cache-dir -e ".[pipeline]"
+
+USER dvc
 
 CMD ["dvc", "--version"]

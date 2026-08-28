@@ -66,14 +66,19 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dvc-runner
+      args:
+        DVC_UID: ${DVC_UID}
+        DVC_GID: ${DVC_GID}
 
     container_name: compagnon_dvc
 
+    user: "${DVC_UID}:${DVC_GID}"
+    
     working_dir: /workspace
 
     volumes:
       - .:/workspace
-      - ${HOME}/.cache/pydrive2fs:/root/.cache/pydrive2fs
+      - ${HOME}/.cache/pydrive2fs:/home/dvc/.cache/pydrive2fs
 
     environment:
       MLFLOW_TRACKING_URI: http://mlflow:5000
@@ -87,7 +92,6 @@ services:
       - sh
       - -c
       - |
-        git config --global --add safe.directory /workspace
         git config --global user.name "$GIT_USER_NAME"
         git config --global user.email "$GIT_USER_EMAIL"
         exec sleep infinity
