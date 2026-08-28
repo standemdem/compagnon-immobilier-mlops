@@ -21,6 +21,7 @@ api = [
     "python-dotenv==1.2.3",
     "uvicorn==0.52.4",
     "prometheus-client==0.26.0",
+    "mlflow==3.5.0",
 ]
 
 pipeline = [

@@ -14,10 +14,16 @@ services:
 
     volumes:
       - ./data/models:/app/data/models:ro
+      - ./mlflow:/mlflow:ro
+
+    environment:
+      MLFLOW_TRACKING_URI: http://mlflow:5000
       
     depends_on:
       dvc-init:
         condition: service_completed_successfully
+      mlflow:
+        condition: service_started
 
     restart: unless-stopped
 
@@ -118,7 +124,7 @@ services:
       - "localhost:*,127.0.0.1:*,mlflow:5000"
       - --backend-store-uri
       - sqlite:////mlflow/mlflow.db
-      - --default-artifact-root
+      - --artifacts-destination
       - /mlflow/artifacts
 
     restart: unless-stopped

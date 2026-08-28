@@ -210,8 +210,8 @@ stages:
       size: 27754003
     - path: scripts/train_model.py
       hash: md5
-      md5: a216d955707dbfeed350de9aeaa1e82f
-      size: 8534
+      md5: 9820dd9601117f4da14c2cfecdaead3c
+      size: 8537
     - path: src/compagnon_immo/models/evaluate.py
       hash: md5
       md5: 8bed8a77dc081231973a372a8cb16079
@@ -229,7 +229,7 @@ stages:
         model:
           type: random_forest
           random_forest:
-            n_estimators: 60
+            n_estimators: 50
             random_state: 42
             n_jobs: 2
             max_depth: 20
@@ -248,9 +248,9 @@ stages:
     outs:
     - path: data/models/prix_m2_pipeline_2020_2023.joblib
       hash: md5
-      md5: 95c1a6ab570286bb5bbc4be227d651e2
-      size: 758670186
+      md5: 4518a638f5d9b8986b9ee56049020125
+      size: 632548554
     - path: data/models/prix_m2_pipeline_2020_2023.metadata.json
       hash: md5
-      md5: d553ada714e3fdd49fd15f8c06bac2a3
-      size: 1215
+      md5: 29e757f32b2b138c1baeaf5cab4ec86c
+      size: 1216

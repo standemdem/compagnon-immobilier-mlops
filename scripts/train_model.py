@@ -75,7 +75,7 @@ def main() -> None:
     )
 
     mlflow.set_experiment(
-        MLFLOW_EXPERIMENT_NAME
+        "compagnon-immobilier-v2"
     )
     # --------------------------------------------------
     # Chargement du dataset
