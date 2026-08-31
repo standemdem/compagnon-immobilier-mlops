@@ -71,13 +71,14 @@ def test_predict_with_valid_payload(monkeypatch):
 
     monkeypatch.setattr(
         "app.main.get_model",
-        lambda: FakeModel(),
+        lambda scope: FakeModel(),
     )
 
     response = client.post(
         "/predict",
         headers={"x-api-key": API_KEY},
         json={
+            "scope": "france",
             "surface_reelle_bati": 62,
             "nombre_pieces_principales": 3,
             "latitude": 46.20,
@@ -93,3 +94,77 @@ def test_predict_with_valid_payload(monkeypatch):
 
     assert "prix_m2" in data
     assert data["prix_m2"] == 3500.0
+
+def test_predict_uses_requested_scope(monkeypatch):
+    requested_scopes = []
+
+    class FakeModel:
+        def predict(self, input_df):
+            return [10500.0]
+
+    def fake_get_model(scope):
+        requested_scopes.append(scope)
+        return FakeModel()
+
+    monkeypatch.setattr(
+        "app.main.get_model",
+        fake_get_model,
+    )
+
+    response = client.post(
+        "/predict",
+        headers={"x-api-key": API_KEY},
+        json={
+            "scope": "paris",
+            "surface_reelle_bati": 50,
+            "nombre_pieces_principales": 2,
+            "latitude": 48.8566,
+            "longitude": 2.3522,
+            "has_dependance": False,
+            "nom_commune": "Paris 4e Arrondissement",
+        },
+    )
+
+    assert response.status_code == 200
+    assert requested_scopes == ["paris"]
+
+def test_model_info_returns_requested_scope(monkeypatch):
+    def fake_get_model_info(scope):
+        return {
+            "scope": scope,
+            "registered_model": (
+                f"compagnon-immobilier-prix-m2-{scope}"
+            ),
+            "alias": "champion",
+            "version": 1,
+            "run_id": "fake-run-id",
+        }
+
+    monkeypatch.setattr(
+        "app.main.get_model_info",
+        fake_get_model_info,
+    )
+
+    response = client.get(
+        "/model/info?scope=paris"
+    )
+
+    assert response.status_code == 200
+
+    body = response.json()
+
+    assert body["scope"] == "paris"
+    assert (
+        body["registered_model"]
+        == "compagnon-immobilier-prix-m2-paris"
+    )
+    assert body["alias"] == "champion"
+    assert body["version"] == 1
+    assert body["run_id"] == "fake-run-id"
+
+def test_model_info_with_invalid_scope():
+    response = client.get(
+        "/model/info?scope=toulouse"
+    )
+
+    assert response.status_code == 422

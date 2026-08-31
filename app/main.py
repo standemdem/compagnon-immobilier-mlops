@@ -1,8 +1,6 @@
 import time
-import json
-from pathlib import Path
 import pandas as pd
-
+from typing import Literal
 from contextlib import asynccontextmanager
 from fastapi import Depends, FastAPI, Response
 
@@ -13,19 +11,17 @@ from prometheus_client import (
     generate_latest,
 )
 
-from app.model_loader import get_model
+from app.model_loader import (
+    get_model,
+    get_model_info,
+)
+
 from app.schemas import (
     PredictionRequest,
     PredictionResponse,
 )
 from app.security import verify_api_key
 
-
-
-METADATA_PATH = Path(
-    "data/models/"
-    "prix_m2_pipeline_2020_2023.metadata.json"
-)
 
 PREDICTION_COUNTER = Counter(
     "compagnon_predictions_total",
@@ -45,10 +41,11 @@ PREDICTION_LATENCY = Histogram(
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
-    Charge le modèle MLflow au démarrage de l'API.
+    Charge les champions MLflow au démarrage de l'API.
     """
 
-    get_model()
+    get_model("france")
+    get_model("paris")
 
     yield
 
@@ -88,23 +85,15 @@ def health() -> dict[str, str]:
 
 
 @app.get("/model/info")
-def model_info() -> dict:
+def model_info(
+    scope: Literal["france", "paris"] = "france",
+) -> dict:
     """
-    Retourne les métadonnées du modèle actuellement utilisé.
+    Retourne les informations du champion MLflow
+    correspondant au scope demandé.
     """
 
-    if not METADATA_PATH.exists():
-        return {
-            "status": "metadata_not_found",
-        }
-
-    with METADATA_PATH.open(
-        "r",
-        encoding="utf-8",
-    ) as file:
-        metadata = json.load(file)
-
-    return metadata
+    return get_model_info(scope)
 
 
 @app.post(
@@ -122,10 +111,12 @@ def predict(
     start_time = time.perf_counter()
 
     try:
-        model = get_model()
+        model = get_model(request.scope)
 
         input_df = pd.DataFrame([
-            request.model_dump()
+            request.model_dump(
+            exclude={"scope"}
+            )
         ])
 
         prediction = model.predict(input_df)[0]

@@ -1,10 +1,14 @@
 from pydantic import BaseModel, Field
-
+from typing import Literal
 
 class PredictionRequest(BaseModel):
+    scope: Literal["france", "paris"] = Field(
+    description="Périmètre du modèle utilisé pour la prédiction.",
+    )
+    
     surface_reelle_bati: float = Field(
-        gt=0,
-        description="Surface réelle bâtie en m².",
+    gt=0,
+    description="Surface réelle bâtie en m².",
     )
 
     nombre_pieces_principales: int = Field(
