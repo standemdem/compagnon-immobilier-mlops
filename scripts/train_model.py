@@ -293,10 +293,6 @@ def main() -> None:
             metadata=metadata,
             output_path=METADATA_PATH,
         )
-        mlflow.log_artifact(
-            str(MODEL_PATH),
-            artifact_path="model",
-        )
 
         mlflow.log_artifact(
             str(METADATA_PATH),
