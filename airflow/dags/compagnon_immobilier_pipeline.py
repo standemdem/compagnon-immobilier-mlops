@@ -210,4 +210,30 @@ with DAG(
             ["dvc", "push"]
         )
 
-    dvc_pull() >> dvc_experiment() >> dvc_push()
+    @task(trigger_rule="all_done")
+    def restore_workspace():
+        print("=== Restauration du workspace DVC ===")
+
+        run_in_dvc_container(
+            [
+                "git",
+                "restore",
+                "--source=HEAD",
+                "--",
+                "params.yaml",
+                "dvc.lock",
+            ]
+        )
+
+        run_in_dvc_container(
+            [
+                "dvc",
+                "checkout",
+                "train",
+                "--force",
+            ]
+        )
+
+        print("Workspace DVC restauré.")
+
+    dvc_pull() >> dvc_experiment() >> dvc_push() >> restore_workspace()
