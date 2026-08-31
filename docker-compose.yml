@@ -52,7 +52,7 @@ services:
 
       volumes:
         - .:/workspace
-        - ${HOME}/.cache/pydrive2fs:/root/.cache/pydrive2fs
+        - ${HOME}/.cache/pydrive2fs:/home/dvc/.cache/pydrive2fs
       environment:
         GIT_USER_NAME: ${GIT_USER_NAME}
         GIT_USER_EMAIL: ${GIT_USER_EMAIL}
@@ -147,12 +147,14 @@ services:
     volumes:
       - ./airflow/dags:/opt/airflow/dags
       - ./airflow/logs:/opt/airflow/logs
+      - ./airflow/data:/opt/airflow/data
       - /var/run/docker.sock:/var/run/docker.sock
 
     environment:
       AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/dags
       AIRFLOW__CORE__LOAD_EXAMPLES: "false"
-
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: "sqlite:////opt/airflow/data/airflow.db"
+      AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_PASSWORDS_FILE: "/opt/airflow/data/simple_auth_manager_passwords.json"
       AIRFLOW__WORKERS__EXECUTION_API_TIMEOUT: "30"
       AIRFLOW__DAG_PROCESSOR__REFRESH_INTERVAL: "10"
       AIRFLOW__DAG_PROCESSOR__MIN_FILE_PROCESS_INTERVAL: "10"

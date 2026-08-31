@@ -33,6 +33,9 @@ MLFLOW_TRACKING_URI = os.getenv(
 )
 
 MLFLOW_EXPERIMENT_NAME = "compagnon-immobilier"
+MLFLOW_RUN_NAME = os.getenv(
+    "MLFLOW_RUN_NAME",
+)
 
 DATASET_PATH = Path(
     "data/prod/"
@@ -152,7 +155,7 @@ def main() -> None:
     print(f"Tracking URI : {MLFLOW_TRACKING_URI}")
     print(f"Experiment   : {MLFLOW_EXPERIMENT_NAME}")
 
-    with mlflow.start_run() as run:
+    with mlflow.start_run(run_name=MLFLOW_RUN_NAME) as run:
 
         print(f"Run ID       : {run.info.run_id}")
         print("\n=== Construction du pipeline ===")
