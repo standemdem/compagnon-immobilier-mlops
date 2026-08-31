@@ -2,13 +2,21 @@ from pathlib import Path
 
 import pandas as pd
 
-from compagnon_immo.data.build_dataset import (build_base_model_dataset,concatenate_years,)
+from compagnon_immo.data.build_dataset import (
+    build_base_model_dataset,
+    build_paris_model_dataset,
+    concatenate_years,
+)
 from compagnon_immo.data.io import save_parquet_gzip
 
 
 PROCESSED_DIR = Path("data/processed")
-OUTPUT_PATH = Path(
-    "data/prod/dvf_appartements_model_base_2020_2024.parquet.gz"
+FRANCE_OUTPUT_PATH = Path(
+    "data/prod/dvf_appartements_model_base_france_2020_2024.parquet.gz"
+)
+
+PARIS_OUTPUT_PATH = Path(
+    "data/prod/dvf_appartements_model_base_paris_2020_2024.parquet.gz"
 )
 
 YEARS = [
@@ -21,7 +29,8 @@ YEARS = [
 
 
 def main() -> None:
-    datasets = []
+    france_datasets = []
+    paris_datasets = []
 
     print("=== Construction du dataset ML multi-années ===")
 
@@ -47,29 +56,54 @@ def main() -> None:
             f"{df.shape[1]} colonnes"
         )
 
-        df_model = build_base_model_dataset(df)
+        df_france = build_base_model_dataset(df)
+        df_paris = build_paris_model_dataset(df)
 
         print(
-            f"Dataset ML annuel : "
-            f"{df_model.shape[0]} lignes / "
-            f"{df_model.shape[1]} colonnes"
+            f"Dataset France annuel : "
+            f"{df_france.shape[0]} lignes / "
+            f"{df_france.shape[1]} colonnes"
         )
 
-        datasets.append(df_model)
+        print(
+            f"Dataset Paris annuel : "
+            f"{df_paris.shape[0]} lignes / "
+            f"{df_paris.shape[1]} colonnes"
+        )
 
-    print("\n=== Concaténation ===")
+        france_datasets.append(df_france)
+        paris_datasets.append(df_paris)
 
-    df_all = concatenate_years(datasets)
+    print("\n=== Concaténation France ===")
+
+    df_france_all = concatenate_years(france_datasets)
 
     print(
-        f"Dataset consolidé : "
-        f"{df_all.shape[0]} lignes / "
-        f"{df_all.shape[1]} colonnes"
+        f"Dataset France consolidé : "
+        f"{df_france_all.shape[0]} lignes / "
+        f"{df_france_all.shape[1]} colonnes"
     )
 
-    print("\nRépartition par année :")
+    print("\nRépartition France par année :")
     print(
-        df_all["annee_mutation"]
+        df_france_all["annee_mutation"]
+        .value_counts()
+        .sort_index()
+    )
+
+    print("\n=== Concaténation Paris ===")
+
+    df_paris_all = concatenate_years(paris_datasets)
+
+    print(
+        f"Dataset Paris consolidé : "
+        f"{df_paris_all.shape[0]} lignes / "
+        f"{df_paris_all.shape[1]} colonnes"
+    )
+
+    print("\nRépartition Paris par année :")
+    print(
+        df_paris_all["annee_mutation"]
         .value_counts()
         .sort_index()
     )
@@ -77,8 +111,14 @@ def main() -> None:
     print("\n=== Sauvegarde ===")
 
     save_parquet_gzip(
-        df=df_all,
-        output_path=str(OUTPUT_PATH),
+        df=df_france_all,
+        output_path=str(FRANCE_OUTPUT_PATH),
+        overwrite=True,
+    )
+
+    save_parquet_gzip(
+        df=df_paris_all,
+        output_path=str(PARIS_OUTPUT_PATH),
         overwrite=True,
     )
 

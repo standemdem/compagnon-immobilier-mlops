@@ -5,6 +5,8 @@ import json
 from pathlib import Path
 from sklearn.ensemble import (RandomForestRegressor, HistGradientBoostingRegressor)
 from sklearn.pipeline import Pipeline
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import OneHotEncoder
 
 from compagnon_immo.models.transformers import (
     CommuneSalesEncoder,
@@ -154,13 +156,19 @@ def split_features_target(
 def build_model_pipeline(
     model_type: str,
     model_params: dict,
+    scope: str,
 ) -> Pipeline:
     """
-    Construit le pipeline sklearn complet.
+    Construit le pipeline sklearn complet selon le scope.
 
-    Étapes :
+    France :
     1. création de nb_ventes_commune ;
-    2. sélection des features numériques finales ;
+    2. sélection des features finales ;
+    3. entraînement du modèle configuré.
+
+    Paris :
+    1. conservation des features numériques ;
+    2. encodage One-Hot de l'arrondissement ;
     3. entraînement du modèle configuré.
     """
 
@@ -179,24 +187,73 @@ def build_model_pipeline(
             f"Type de modèle non supporté : {model_type}"
         )
 
-    pipeline = Pipeline(
-        steps=[
-            (
-                "commune_sales_encoder",
-                CommuneSalesEncoder(),
-            ),
-            (
-                "feature_selector",
-                FeatureSelector(
-                    features=FINAL_MODEL_FEATURES
+    if scope == "france":
+        pipeline = Pipeline(
+            steps=[
+                (
+                    "commune_sales_encoder",
+                    CommuneSalesEncoder(),
                 ),
-            ),
-            (
-                "model",
-                estimator,
-            ),
+                (
+                    "feature_selector",
+                    FeatureSelector(
+                        features=FINAL_MODEL_FEATURES
+                    ),
+                ),
+                (
+                    "model",
+                    estimator,
+                ),
+            ]
+        )
+
+    elif scope == "paris":
+        numeric_features = [
+            "surface_reelle_bati",
+            "nombre_pieces_principales",
+            "latitude",
+            "longitude",
+            "has_dependance",
         ]
-    )
+
+        categorical_features = [
+            "nom_commune",
+        ]
+
+        preprocessor = ColumnTransformer(
+            transformers=[
+                (
+                    "numeric",
+                    "passthrough",
+                    numeric_features,
+                ),
+                (
+                    "categorical",
+                    OneHotEncoder(
+                        handle_unknown="ignore",
+                    ),
+                    categorical_features,
+                ),
+            ]
+        )
+
+        pipeline = Pipeline(
+            steps=[
+                (
+                    "preprocessor",
+                    preprocessor,
+                ),
+                (
+                    "model",
+                    estimator,
+                ),
+            ]
+        )
+
+    else:
+        raise ValueError(
+            f"Scope non supporté : {scope}"
+        )
 
     return pipeline
 

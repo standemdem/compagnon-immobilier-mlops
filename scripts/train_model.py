@@ -27,19 +27,9 @@ from compagnon_immo.models.train import (
 
 PARAMS_PATH = Path("params.yaml")
 
-MLFLOW_TRACKING_URI = os.getenv(
-    "MLFLOW_TRACKING_URI",
-    "http://127.0.0.1:5000",
-)
-
-MLFLOW_EXPERIMENT_NAME = "compagnon-immobilier"
-MLFLOW_RUN_NAME = os.getenv(
-    "MLFLOW_RUN_NAME",
-)
-
-DATASET_PATH = Path(
-    "data/prod/"
-    "dvf_appartements_model_base_2020_2024.parquet.gz"
+MODEL_PATH = Path(
+    "data/models/"
+    "prix_m2_pipeline_2020_2023.joblib"
 )
 
 METADATA_PATH = Path(
@@ -47,12 +37,15 @@ METADATA_PATH = Path(
     "prix_m2_pipeline_2020_2023.metadata.json"
 )
 
-MODEL_PATH = Path(
-    "data/models/"
-    "prix_m2_pipeline_2020_2023.joblib"
+MLFLOW_TRACKING_URI = os.getenv(
+    "MLFLOW_TRACKING_URI",
+    "http://127.0.0.1:5000",
 )
 
-MLFLOW_REGISTERED_MODEL_NAME = "compagnon-immobilier-prix-m2"
+MLFLOW_EXPERIMENT_NAME = "compagnon-immobilier-v2"
+MLFLOW_RUN_NAME = os.getenv(
+    "MLFLOW_RUN_NAME",
+)
 
 ############################################
 
@@ -65,8 +58,33 @@ model_params = model_config[model_type]
 
 test_year = config["training"]["test_year"]
 
-lower_quantile = (config["target_filter"]["lower_quantile"])
-upper_quantile = (config["target_filter"]["upper_quantile"])
+scope = config["training"]["scope"]
+
+SUPPORTED_SCOPES = {
+    "france": Path(
+        "data/prod/"
+        "dvf_appartements_model_base_france_2020_2024.parquet.gz"
+    ),
+    "paris": Path(
+        "data/prod/"
+        "dvf_appartements_model_base_paris_2020_2024.parquet.gz"
+    ),
+}
+
+if scope not in SUPPORTED_SCOPES:
+    raise ValueError(
+        f"Scope d'entraînement non supporté : {scope}. "
+        f"Valeurs possibles : {sorted(SUPPORTED_SCOPES)}"
+    )
+
+DATASET_PATH = SUPPORTED_SCOPES[scope]
+
+MLFLOW_REGISTERED_MODEL_NAME = (
+    f"compagnon-immobilier-prix-m2-{scope}"
+)
+
+lower_quantile = config["target_filter"]["lower_quantile"]
+upper_quantile = config["target_filter"]["upper_quantile"]
 
 def main() -> None:
 
@@ -78,12 +96,15 @@ def main() -> None:
     )
 
     mlflow.set_experiment(
-        "compagnon-immobilier-v2"
+        MLFLOW_EXPERIMENT_NAME
     )
+
     # --------------------------------------------------
     # Chargement du dataset
     # --------------------------------------------------
     print("=== Chargement du dataset ===")
+    print(f"Scope   : {scope}")
+    print(f"Dataset : {DATASET_PATH}")
 
     df = pd.read_parquet(DATASET_PATH)
 
@@ -154,6 +175,7 @@ def main() -> None:
     print("\n=== MLflow ===")
     print(f"Tracking URI : {MLFLOW_TRACKING_URI}")
     print(f"Experiment   : {MLFLOW_EXPERIMENT_NAME}")
+    print(f"Registered model : {MLFLOW_REGISTERED_MODEL_NAME}")
 
     with mlflow.start_run(run_name=MLFLOW_RUN_NAME) as run:
 
@@ -162,6 +184,7 @@ def main() -> None:
         pipeline = build_model_pipeline(
             model_type=model_type,
             model_params=model_params,
+            scope=scope,
         )
 
 
@@ -209,8 +232,7 @@ def main() -> None:
 
         metadata = {
             "model_name": "prix_m2_pipeline",
-            "model_type": "RandomForestRegressor",
-
+            "scope": scope,
             "training_years": [
                 2020,
                 2021,
@@ -282,6 +304,7 @@ def main() -> None:
         )
         mlflow.log_params(
             {
+                "scope":scope,
                 "model_type": model_type,
                 **model_params,
                 "test_year": test_year,

@@ -18,6 +18,7 @@ def test_build_random_forest_pipeline():
             "random_state": 42,
             "n_jobs": 1,
         },
+        scope="france"
     )
 
     model = pipeline.named_steps["model"]
@@ -37,6 +38,7 @@ def test_build_hist_gradient_boosting_pipeline():
             "max_iter": 10,
             "random_state": 42,
         },
+        scope="france"
     )
 
     model = pipeline.named_steps["model"]
@@ -57,4 +59,5 @@ def test_build_pipeline_with_unknown_model():
         build_model_pipeline(
             model_type="modele_inconnu",
             model_params={},
+            scope="france"
         )

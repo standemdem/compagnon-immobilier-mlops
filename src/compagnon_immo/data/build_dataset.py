@@ -149,6 +149,36 @@ def filter_metropolitan_france(
 
     return df_filtered
 
+def filter_paris(
+    df: pd.DataFrame,
+) -> pd.DataFrame:
+    """
+    Conserve uniquement les observations situées à Paris
+    à partir du code département.
+    """
+
+    if "code_departement" not in df.columns:
+        raise ValueError(
+            "La colonne 'code_departement' est absente du DataFrame."
+        )
+
+    department = (
+        df["code_departement"]
+        .astype("string")
+        .str.strip()
+        .str.upper()
+    )
+
+    paris_mask = (
+        department == "75"
+    ).fillna(False)
+
+    df_filtered = df.loc[
+        paris_mask
+    ].copy()
+
+    return df_filtered
+
 def add_mutation_year(
     df: pd.DataFrame,
 ) -> pd.DataFrame:
@@ -233,6 +263,36 @@ def build_base_model_dataset(
     df_model = filter_valid_coordinates(df_model)
 
     df_model = filter_metropolitan_france(df_model)
+
+    df_model = add_mutation_year(df_model)
+
+    df_model = select_model_columns(df_model)
+
+    return df_model
+
+def build_paris_model_dataset(
+    df: pd.DataFrame,
+) -> pd.DataFrame:
+    """
+    Prépare un dataset annuel limité à Paris
+    pour la modélisation.
+
+    Étapes :
+    1. création de prix_m2 ;
+    2. suppression des coordonnées manquantes ;
+    3. filtre France métropolitaine ;
+    4. filtre Paris ;
+    5. ajout de l'année de mutation ;
+    6. sélection des colonnes modèle.
+    """
+
+    df_model = add_price_per_square_meter(df)
+
+    df_model = filter_valid_coordinates(df_model)
+
+    df_model = filter_metropolitan_france(df_model)
+
+    df_model = filter_paris(df_model)
 
     df_model = add_mutation_year(df_model)
 

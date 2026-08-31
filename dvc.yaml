@@ -83,7 +83,8 @@ stages:
       - data/processed/dvf_appartements_vente_2023.parquet.gz
       - data/processed/dvf_appartements_vente_2024.parquet.gz
     outs:
-      - data/prod/dvf_appartements_model_base_2020_2024.parquet.gz
+      - data/prod/dvf_appartements_model_base_france_2020_2024.parquet.gz
+      - data/prod/dvf_appartements_model_base_paris_2020_2024.parquet.gz
 
 
   train:
@@ -93,12 +94,13 @@ stages:
       - src/compagnon_immo/models/train.py
       - src/compagnon_immo/models/evaluate.py
       - src/compagnon_immo/models/transformers.py
-      - data/prod/dvf_appartements_model_base_2020_2024.parquet.gz
+      - data/prod/dvf_appartements_model_base_france_2020_2024.parquet.gz
+      - data/prod/dvf_appartements_model_base_paris_2020_2024.parquet.gz
 
     params:
-    - model
-    - training
-    - target_filter
+      - model
+      - training
+      - target_filter
     
     outs:
       - data/models/prix_m2_pipeline_2020_2023.joblib

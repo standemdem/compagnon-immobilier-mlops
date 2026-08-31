@@ -186,40 +186,48 @@ stages:
       size: 11036281
     - path: scripts/build_model_dataset.py
       hash: md5
-      md5: 2b87397a9490233b35076e38ff1ac71f
-      size: 1814
+      md5: 2240803a10fc3beaaebb0daa4ece60a7
+      size: 2847
     - path: src/compagnon_immo/data/build_dataset.py
       hash: md5
-      md5: 1b618c2da0d605e757ab965aa41e3248
-      size: 6075
+      md5: 7475f130133e41aa88abbf389078b5b1
+      size: 7373
     - path: src/compagnon_immo/data/io.py
       hash: md5
       md5: 7cd0a9fe3488504c0eb34b098034a606
       size: 955
     outs:
-    - path: data/prod/dvf_appartements_model_base_2020_2024.parquet.gz
+    - path: data/prod/dvf_appartements_model_base_france_2020_2024.parquet.gz
       hash: md5
-      md5: 9b44c47cdcfb637f342a35260e3d0850
-      size: 27754003
+      md5: 08aff691e2a0816c1c1527f4656d284a
+      size: 27854832
+    - path: data/prod/dvf_appartements_model_base_paris_2020_2024.parquet.gz
+      hash: md5
+      md5: 6e9e0f756bfb5fb3923a09ea46a06980
+      size: 1810572
   train:
     cmd: python scripts/train_model.py
     deps:
-    - path: data/prod/dvf_appartements_model_base_2020_2024.parquet.gz
+    - path: data/prod/dvf_appartements_model_base_france_2020_2024.parquet.gz
       hash: md5
-      md5: 9b44c47cdcfb637f342a35260e3d0850
-      size: 27754003
+      md5: 08aff691e2a0816c1c1527f4656d284a
+      size: 27854832
+    - path: data/prod/dvf_appartements_model_base_paris_2020_2024.parquet.gz
+      hash: md5
+      md5: 6e9e0f756bfb5fb3923a09ea46a06980
+      size: 1810572
     - path: scripts/train_model.py
       hash: md5
-      md5: a4f5db0d139e3c050e2d4a4c6fed9f22
-      size: 8615
+      md5: 84ed5c17e5a03fb041ef8ecd075e30cd
+      size: 9207
     - path: src/compagnon_immo/models/evaluate.py
       hash: md5
       md5: 8bed8a77dc081231973a372a8cb16079
       size: 629
     - path: src/compagnon_immo/models/train.py
       hash: md5
-      md5: 12bfff7569c9f762abd270e0e050488f
-      size: 5335
+      md5: bbebb91d17afa00664dae78bded8c205
+      size: 6814
     - path: src/compagnon_immo/models/transformers.py
       hash: md5
       md5: 4fca4ba79b07a98f0b210a56e730be01
@@ -245,12 +253,13 @@ stages:
           upper_quantile: 0.99
         training:
           test_year: 2024
+          scope: paris
     outs:
     - path: data/models/prix_m2_pipeline_2020_2023.joblib
       hash: md5
-      md5: 4518a638f5d9b8986b9ee56049020125
-      size: 632548554
+      md5: 16d684dc0a10b60fbe354364290f5023
+      size: 79564730
     - path: data/models/prix_m2_pipeline_2020_2023.metadata.json
       hash: md5
-      md5: 29e757f32b2b138c1baeaf5cab4ec86c
-      size: 1216
+      md5: b972feebd9e1ca5a75903b2e22c391dc
+      size: 1204

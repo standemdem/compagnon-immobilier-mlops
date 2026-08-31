@@ -17,6 +17,7 @@ model:
 
 training:
   test_year: 2024
+  scope: paris
 
 target_filter:
   lower_quantile: 0.01

@@ -44,6 +44,17 @@ with DAG(
     tags=["compagnon-immobilier", "mlops"],
     max_active_runs=1,
     params={
+        "scope": Param(
+            "paris",
+            type="string",
+            enum=[
+                "france",
+                "paris",
+            ],
+            title="Périmètre géographique",
+            description="Périmètre utilisé pour l'entraînement du modèle.",
+            section="Données",
+        ),
         "model_type": Param(
             "random_forest",
             type="string",
@@ -141,6 +152,7 @@ with DAG(
     def dvc_experiment(**context):
         params = context["params"]
 
+        scope = params["scope"]
         model_type = params["model_type"]
         experiment_name = params["experiment_name"]
 
@@ -150,6 +162,8 @@ with DAG(
             "run",
             "--name",
             experiment_name,
+            "--set-param",
+            f"training.scope={scope}",
             "--set-param",
             f"model.type={model_type}",
         ]
