@@ -2,12 +2,180 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Compagnon Immobilier - Control</title>
-</head>
-<body>
-    <h1>Compagnon Immobilier</h1>
-    <h2>Portail d'administration</h2>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <p>Accès autorisé.</p>
+    <title>Compagnon Immobilier - Administration</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            color: #1f2937;
+        }
+
+        header {
+            background: #111827;
+            color: white;
+            padding: 32px 24px;
+        }
+
+        header div {
+            max-width: 1000px;
+            margin: auto;
+        }
+
+        header h1 {
+            margin: 0 0 8px;
+            font-size: 28px;
+        }
+
+        header p {
+            margin: 0;
+            color: #d1d5db;
+        }
+
+        main {
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 0 24px;
+        }
+
+        .intro {
+            margin-bottom: 30px;
+        }
+
+        .intro h2 {
+            margin-bottom: 8px;
+        }
+
+        .intro p {
+            color: #6b7280;
+        }
+
+        .services {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            display: block;
+            padding: 24px;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            text-decoration: none;
+            color: inherit;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .card h3 {
+            margin: 0 0 10px;
+            font-size: 20px;
+        }
+
+        .card p {
+            margin: 0;
+            color: #6b7280;
+            line-height: 1.5;
+        }
+
+        .tag {
+            display: inline-block;
+            margin-top: 18px;
+            padding: 5px 9px;
+            border-radius: 5px;
+            background: #f3f4f6;
+            color: #4b5563;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        footer {
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 0 24px 30px;
+            color: #9ca3af;
+            font-size: 13px;
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <div>
+        <h1>Compagnon Immobilier</h1>
+        <p>Portail d'administration MLOps</p>
+    </div>
+</header>
+
+<main>
+
+    <section class="intro">
+        <h2>Services</h2>
+        <p>
+            Accès aux outils d'orchestration, de suivi des modèles
+            et de monitoring de la plateforme.
+        </p>
+    </section>
+
+    <section class="services">
+
+        <a class="card" href="/control/airflow/" target="_blank">
+            <h3>Airflow</h3>
+            <p>
+                Orchestration du pipeline, lancement des expériences
+                et suivi de l'exécution des DAGs.
+            </p>
+            <span class="tag">Orchestration</span>
+        </a>
+
+        <a class="card" href="/control/mlflow/" target="_blank">
+            <h3>MLflow</h3>
+            <p>
+                Suivi des expérimentations, métriques,
+                versions des modèles et Model Registry.
+            </p>
+            <span class="tag">Machine Learning</span>
+        </a>
+
+        <a class="card" href="/control/grafana/" target="_blank">
+            <h3>Grafana</h3>
+            <p>
+                Visualisation des métriques de fonctionnement
+                et tableaux de bord de monitoring.
+            </p>
+            <span class="tag">Visualisation</span>
+        </a>
+
+        <a class="card" href="/control/prometheus/" target="_blank">
+            <h3>Prometheus</h3>
+            <p>
+                Collecte, exploration et interrogation
+                des métriques exposées par l'API.
+            </p>
+            <span class="tag">Monitoring</span>
+        </a>
+
+    </section>
+
+</main>
+
+<footer>
+    Compagnon Immobilier — Plateforme MLOps
+</footer>
+
 </body>
 </html>
