@@ -80,5 +80,6 @@ airflow/airflow.db
 airflow/data/
 
 # ============================================
-# Graphana
+# Nginx
 # ============================================
+nginx/auth/.htpasswd

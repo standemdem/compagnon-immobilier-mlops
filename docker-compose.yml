@@ -37,6 +37,8 @@ services:
 
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/control:/usr/share/nginx/html/control:ro
+      - ./nginx/auth:/etc/nginx/auth:ro
 
     depends_on:
       - api
@@ -107,8 +109,8 @@ services:
 
     container_name: compagnon_mlflow
 
-    ports:
-      - "5000:5000"
+    expose:
+      - "5000"
 
     volumes:
       - ./mlflow:/mlflow
@@ -141,8 +143,8 @@ services:
     group_add:
       - "${DOCKER_GID}"
 
-    ports:
-      - "8081:8080"
+    expose:
+      - "8080"
 
     volumes:
       - ./airflow/dags:/opt/airflow/dags
@@ -155,6 +157,7 @@ services:
       AIRFLOW__CORE__LOAD_EXAMPLES: "false"
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: "sqlite:////opt/airflow/data/airflow.db"
       AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_PASSWORDS_FILE: "/opt/airflow/data/simple_auth_manager_passwords.json"
+      AIRFLOW__API__BASE_URL: http://localhost:8080/control/airflow
       AIRFLOW__WORKERS__EXECUTION_API_TIMEOUT: "30"
       AIRFLOW__DAG_PROCESSOR__REFRESH_INTERVAL: "10"
       AIRFLOW__DAG_PROCESSOR__MIN_FILE_PROCESS_INTERVAL: "10"
@@ -176,8 +179,8 @@ services:
 
     container_name: compagnon_prometheus
 
-    ports:
-      - "9090:9090"
+    expose:
+      - "9090"
 
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
@@ -185,7 +188,9 @@ services:
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--storage.tsdb.path=/prometheus"
-
+      - --web.external-url=http://localhost:8080/control/prometheus
+      - --web.route-prefix=/
+    
     depends_on:
       - api
 
@@ -196,8 +201,8 @@ services:
 
     container_name: compagnon_grafana
 
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
 
     volumes:
       - grafana_data:/var/lib/grafana
@@ -207,6 +212,8 @@ services:
     environment:
       GF_SECURITY_ADMIN_USER: admin
       GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_SERVER_ROOT_URL: http://localhost:8080/control/grafana/
+      GF_SERVER_SERVE_FROM_SUB_PATH: "true"
 
     depends_on:
       - prometheus
