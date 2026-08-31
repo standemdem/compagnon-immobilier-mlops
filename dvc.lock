@@ -210,8 +210,8 @@ stages:
       size: 27754003
     - path: scripts/train_model.py
       hash: md5
-      md5: 9820dd9601117f4da14c2cfecdaead3c
-      size: 8537
+      md5: a4f5db0d139e3c050e2d4a4c6fed9f22
+      size: 8615
     - path: src/compagnon_immo/models/evaluate.py
       hash: md5
       md5: 8bed8a77dc081231973a372a8cb16079
