@@ -70,11 +70,22 @@ def convert_csv_gz_to_parquet(input_path:Path, output_path:Path) -> Path:
         f"and {df.shape[1]} columns"
     )
 
-    df.to_parquet(
-        output_path,
-        engine="pyarrow",
-        index=False,
+    temporary_path = output_path.with_suffix(
+        output_path.suffix + ".part"
     )
+
+    try:
+        df.to_parquet(
+            temporary_path,
+            engine="pyarrow",
+            index=False,
+        )
+
+        temporary_path.replace(output_path)
+
+    except Exception:
+        temporary_path.unlink(missing_ok=True)
+        raise
 
     print(f"Created: {output_path}")
 
