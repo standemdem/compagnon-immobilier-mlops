@@ -24,12 +24,23 @@ def save_parquet_gzip(df: pd.DataFrame,output_path: str,overwrite: bool = True) 
     # Création du dossier si nécessaire
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    df.to_parquet(
-        output_path,
-        engine="pyarrow",
-        compression="gzip",
-        index=False
+    temporary_path = output_path.with_suffix(
+        output_path.suffix + ".part"
     )
+
+    try:
+        df.to_parquet(
+            temporary_path,
+            engine="pyarrow",
+            compression="gzip",
+            index=False,
+        )
+
+        temporary_path.replace(output_path)
+
+    except Exception:
+        temporary_path.unlink(missing_ok=True)
+        raise
 
     print(f"✅ Dataset sauvegardé : {output_path}")
     print(f"   → lignes : {df.shape[0]}")
