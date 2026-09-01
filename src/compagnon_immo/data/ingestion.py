@@ -13,7 +13,7 @@ def download_file(url: str, destination: Path) -> Path:
         print(f"✅ File already exists: {destination}")
         return destination
     
-    with requests.get(url, stream=True) as response:
+    with requests.get(url, stream=True, timeout=60) as response:
         response.raise_for_status()
         
         with open(destination, 'wb') as file:
