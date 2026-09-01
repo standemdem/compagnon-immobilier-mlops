@@ -218,8 +218,8 @@ stages:
       size: 1810572
     - path: scripts/train_model.py
       hash: md5
-      md5: 84ed5c17e5a03fb041ef8ecd075e30cd
-      size: 9207
+      md5: 8620312ac3b56f411409b1b350eafd5c
+      size: 9275
     - path: src/compagnon_immo/models/evaluate.py
       hash: md5
       md5: 8bed8a77dc081231973a372a8cb16079
@@ -261,5 +261,5 @@ stages:
       size: 79564730
     - path: data/models/prix_m2_pipeline_2020_2023.metadata.json
       hash: md5
-      md5: b972feebd9e1ca5a75903b2e22c391dc
-      size: 1204
+      md5: 015d9c621df29c652da916ebf223a2bf
+      size: 1216

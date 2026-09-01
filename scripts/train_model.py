@@ -1,7 +1,6 @@
 import os
 import yaml
 import mlflow
-from mlflow import MlflowClient
 import mlflow.sklearn
 from mlflow.models import infer_signature
 
@@ -163,6 +162,13 @@ def main() -> None:
 
     print("\n=== Préparation des features ===")
 
+    training_years = sorted(
+        train["annee_mutation"]
+        .dropna()
+        .astype(int)
+        .unique()
+        .tolist()
+    )
     X_train, y_train = split_features_target(train)
     X_test, y_test = split_features_target(test)
 
@@ -252,12 +258,7 @@ def main() -> None:
         metadata = {
             "model_name": "prix_m2_pipeline",
             "scope": scope,
-            "training_years": [
-                2020,
-                2021,
-                2022,
-                2023,
-            ],
+            "training_years": training_years,
             "test_year": test_year,
 
             "target": "prix_m2",
@@ -310,9 +311,20 @@ def main() -> None:
             str(METADATA_PATH),
             artifact_path="metadata",
         )
+
+        mlflow.log_artifact(
+            str(PARAMS_PATH),
+            artifact_path="config",
+        )
+
+        mlflow.set_tag(
+            "training_years",
+            ",".join(map(str, training_years)),
+        )
+
         mlflow.log_params(
-            {
-                "scope":scope,
+            { 
+                "scope": scope,
                 "model_type": model_type,
                 **model_params,
                 "test_year": test_year,
@@ -327,7 +339,7 @@ def main() -> None:
 
         print("\n=== Enregistrement MLflow Model Registry ===")
 
-        mlflow.sklearn.log_model(
+        model_info = mlflow.sklearn.log_model(
             sk_model=pipeline,
             name="model",
             signature=signature,
@@ -336,22 +348,7 @@ def main() -> None:
             serialization_format="cloudpickle",
         )
 
-        client = MlflowClient()
-
-        model_versions = client.search_model_versions(
-            filter_string=(
-                f"name='{MLFLOW_REGISTERED_MODEL_NAME}' "
-                f"AND run_id='{run.info.run_id}'"
-            )
-        )
-
-        if len(model_versions) != 1:
-            raise RuntimeError(
-                "Impossible d'identifier de manière unique "
-                "la version MLflow créée par ce run."
-            )
-
-        registered_version = model_versions[0]
+        registered_version = model_info.registered_model_version
 
         
         print(
@@ -361,7 +358,7 @@ def main() -> None:
 
         print(
             f"Version MLflow : "
-            f"{registered_version.version}"
+            f"{registered_version}"
         )
 
         
