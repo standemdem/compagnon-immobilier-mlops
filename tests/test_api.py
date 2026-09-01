@@ -146,7 +146,8 @@ def test_model_info_returns_requested_scope(monkeypatch):
     )
 
     response = client.get(
-        "/model/info?scope=paris"
+        "/model/info?scope=paris",
+        headers={"x-api-key": API_KEY},
     )
 
     assert response.status_code == 200
@@ -164,7 +165,8 @@ def test_model_info_returns_requested_scope(monkeypatch):
 
 def test_model_info_with_invalid_scope():
     response = client.get(
-        "/model/info?scope=toulouse"
+        "/model/info?scope=toulouse",
+        headers={"x-api-key": API_KEY},
     )
 
     assert response.status_code == 422

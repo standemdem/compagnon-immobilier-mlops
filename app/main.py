@@ -87,6 +87,7 @@ def health() -> dict[str, str]:
 @app.get("/model/info")
 def model_info(
     scope: Literal["france", "paris"] = "france",
+    _: str = Depends(verify_api_key)
 ) -> dict:
     """
     Retourne les informations du champion MLflow
