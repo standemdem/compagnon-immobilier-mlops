@@ -11,8 +11,7 @@ on:
 
 jobs:
   tests:
-    runs-on: ubuntu-latest
-
+    runs-on: ubuntu-24.04
     env:
       API_KEY: test_ci_key
 
@@ -39,3 +38,7 @@ jobs:
       - name: Construction de l'image API
         run: |
           docker compose build api
+
+      - name: Construction des images d'orchestration
+        run: |
+          docker compose build dvc airflow
