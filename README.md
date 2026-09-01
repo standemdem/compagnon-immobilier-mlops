@@ -300,8 +300,6 @@ model_base_france_  model_base_paris_
                  ▼
                train
                  │
-          scope sélectionné
-                 │
                  ▼
       modèle + métadonnées
                  │
