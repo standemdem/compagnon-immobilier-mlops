@@ -1,3 +1,4 @@
+from pathlib import Path
 from compagnon_immo.data.ingestion import (
     convert_csv_gz_to_parquet,
     download_file,
@@ -18,17 +19,21 @@ PARQUET_DIR = "data/parquet"
 
 def main() -> None:
     for url, filename in URLS.items():
+        raw_path = Path(RAW_DIR) / filename
+        parquet_path = (
+            Path(PARQUET_DIR)
+            / filename.replace(".csv.gz", ".parquet")
+        )
+
         local_file = download_file(
             url=url,
-            dest_folder=RAW_DIR,
-            filename=filename,
+            destination=raw_path,
         )
 
         convert_csv_gz_to_parquet(
             input_path=local_file,
-            output_folder=PARQUET_DIR,
+            output_path=parquet_path,
         )
-
 
 if __name__ == "__main__":
     main()
