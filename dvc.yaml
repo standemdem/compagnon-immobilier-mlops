@@ -5,7 +5,6 @@ stages:
     deps:
       - scripts/prepare_raw_data.py
       - src/compagnon_immo/data/ingestion.py
-      - src/compagnon_immo/data/io.py
       - data/raw
 
     outs:

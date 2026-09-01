@@ -14,12 +14,8 @@ stages:
       size: 608
     - path: src/compagnon_immo/data/ingestion.py
       hash: md5
-      md5: 3e233cac85e87a4d04a883c200057fa5
-      size: 1645
-    - path: src/compagnon_immo/data/io.py
-      hash: md5
-      md5: 7cd0a9fe3488504c0eb34b098034a606
-      size: 955
+      md5: e2b2ecfde51ec3e0f950f52c124db563
+      size: 2198
     outs:
     - path: data/parquet/full_2020.parquet
       hash: md5
@@ -50,16 +46,16 @@ stages:
       size: 80048183
     - path: scripts/preprocess_data.py
       hash: md5
-      md5: 1234bac3d552788daa9e022b951617bf
-      size: 1513
+      md5: 03de41a8741d0429b6eec3ae483d68a6
+      size: 1548
     - path: src/compagnon_immo/data/cleaning.py
       hash: md5
-      md5: 543ef04a2cf39832b9df737a964c8073
-      size: 3908
+      md5: 82e4a0903eff356bb5ad2ce855f8b99b
+      size: 3993
     - path: src/compagnon_immo/data/io.py
       hash: md5
-      md5: 7cd0a9fe3488504c0eb34b098034a606
-      size: 955
+      md5: 56e9d113ff467fe4001b1e212fb1245e
+      size: 1211
     outs:
     - path: data/processed/dvf_appartements_vente_2020.parquet.gz
       hash: md5
@@ -74,16 +70,16 @@ stages:
       size: 171946168
     - path: scripts/preprocess_data.py
       hash: md5
-      md5: 1234bac3d552788daa9e022b951617bf
-      size: 1513
+      md5: 03de41a8741d0429b6eec3ae483d68a6
+      size: 1548
     - path: src/compagnon_immo/data/cleaning.py
       hash: md5
-      md5: 543ef04a2cf39832b9df737a964c8073
-      size: 3908
+      md5: 82e4a0903eff356bb5ad2ce855f8b99b
+      size: 3993
     - path: src/compagnon_immo/data/io.py
       hash: md5
-      md5: 7cd0a9fe3488504c0eb34b098034a606
-      size: 955
+      md5: 56e9d113ff467fe4001b1e212fb1245e
+      size: 1211
     outs:
     - path: data/processed/dvf_appartements_vente_2021.parquet.gz
       hash: md5
@@ -98,16 +94,16 @@ stages:
       size: 171922313
     - path: scripts/preprocess_data.py
       hash: md5
-      md5: 1234bac3d552788daa9e022b951617bf
-      size: 1513
+      md5: 03de41a8741d0429b6eec3ae483d68a6
+      size: 1548
     - path: src/compagnon_immo/data/cleaning.py
       hash: md5
-      md5: 543ef04a2cf39832b9df737a964c8073
-      size: 3908
+      md5: 82e4a0903eff356bb5ad2ce855f8b99b
+      size: 3993
     - path: src/compagnon_immo/data/io.py
       hash: md5
-      md5: 7cd0a9fe3488504c0eb34b098034a606
-      size: 955
+      md5: 56e9d113ff467fe4001b1e212fb1245e
+      size: 1211
     outs:
     - path: data/processed/dvf_appartements_vente_2022.parquet.gz
       hash: md5
@@ -122,16 +118,16 @@ stages:
       size: 143438980
     - path: scripts/preprocess_data.py
       hash: md5
-      md5: 1234bac3d552788daa9e022b951617bf
-      size: 1513
+      md5: 03de41a8741d0429b6eec3ae483d68a6
+      size: 1548
     - path: src/compagnon_immo/data/cleaning.py
       hash: md5
-      md5: 543ef04a2cf39832b9df737a964c8073
-      size: 3908
+      md5: 82e4a0903eff356bb5ad2ce855f8b99b
+      size: 3993
     - path: src/compagnon_immo/data/io.py
       hash: md5
-      md5: 7cd0a9fe3488504c0eb34b098034a606
-      size: 955
+      md5: 56e9d113ff467fe4001b1e212fb1245e
+      size: 1211
     outs:
     - path: data/processed/dvf_appartements_vente_2023.parquet.gz
       hash: md5
@@ -146,16 +142,16 @@ stages:
       size: 130328962
     - path: scripts/preprocess_data.py
       hash: md5
-      md5: 1234bac3d552788daa9e022b951617bf
-      size: 1513
+      md5: 03de41a8741d0429b6eec3ae483d68a6
+      size: 1548
     - path: src/compagnon_immo/data/cleaning.py
       hash: md5
-      md5: 543ef04a2cf39832b9df737a964c8073
-      size: 3908
+      md5: 82e4a0903eff356bb5ad2ce855f8b99b
+      size: 3993
     - path: src/compagnon_immo/data/io.py
       hash: md5
-      md5: 7cd0a9fe3488504c0eb34b098034a606
-      size: 955
+      md5: 56e9d113ff467fe4001b1e212fb1245e
+      size: 1211
     outs:
     - path: data/processed/dvf_appartements_vente_2024.parquet.gz
       hash: md5
@@ -194,8 +190,8 @@ stages:
       size: 7373
     - path: src/compagnon_immo/data/io.py
       hash: md5
-      md5: 7cd0a9fe3488504c0eb34b098034a606
-      size: 955
+      md5: 56e9d113ff467fe4001b1e212fb1245e
+      size: 1211
     outs:
     - path: data/prod/dvf_appartements_model_base_france_2020_2024.parquet.gz
       hash: md5
