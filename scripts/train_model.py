@@ -230,6 +230,25 @@ def main() -> None:
         print(f"RMSE : {metrics['rmse']:.4f}")
         print(f"R²   : {metrics['r2']:.4f}")
 
+        if scope == "france":
+            model_features = [
+                "surface_reelle_bati",
+                "nombre_pieces_principales",
+                "latitude",
+                "longitude",
+                "has_dependance",
+                "nb_ventes_commune",
+            ]
+        else:
+            model_features = [
+                "surface_reelle_bati",
+                "nombre_pieces_principales",
+                "latitude",
+                "longitude",
+                "has_dependance",
+                "nom_commune (one-hot encoded)",
+            ]
+
         metadata = {
             "model_name": "prix_m2_pipeline",
             "scope": scope,
@@ -252,14 +271,7 @@ def main() -> None:
                 "nom_commune",
             ],
 
-            "model_features": [
-                "surface_reelle_bati",
-                "nombre_pieces_principales",
-                "latitude",
-                "longitude",
-                "has_dependance",
-                "nb_ventes_commune",
-            ],
+            "model_features": model_features,
 
             "target_filter": {
                 "lower_quantile": lower_quantile,
