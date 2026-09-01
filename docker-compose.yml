@@ -12,10 +12,6 @@ services:
     expose:
       - "8000"
 
-    volumes:
-      - ./data/models:/app/data/models:ro
-      - ./mlflow:/mlflow:ro
-
     environment:
       MLFLOW_TRACKING_URI: http://mlflow:5000
       
@@ -184,6 +180,7 @@ services:
 
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
 
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
@@ -210,8 +207,8 @@ services:
       - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
 
     environment:
-      GF_SECURITY_ADMIN_USER: admin
-      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
       GF_SERVER_ROOT_URL: http://localhost:8080/control/grafana/
       GF_SERVER_SERVE_FROM_SUB_PATH: "true"
 
@@ -238,5 +235,6 @@ services:
 
 volumes:
   grafana_data:
+  prometheus_data:
 
   
