@@ -14,4 +14,9 @@ data/parquet
 data/processed
 data/prod
 
+mlflow/
+airflow/logs/
+airflow/data/
+nginx/auth/
+
 notebooks
