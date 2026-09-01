@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from typing import Literal
 
 class PredictionRequest(BaseModel):
@@ -36,7 +36,17 @@ class PredictionRequest(BaseModel):
         min_length=1,
         description="Nom de la commune.",
     )
+    @model_validator(mode="after")
+    def validate_scope_location(self):
+        if (
+            self.scope == "paris"
+            and not self.nom_commune.startswith("Paris ")
+        ):
+            raise ValueError(
+                "Le scope 'paris' nécessite un arrondissement parisien(ex: Paris 4e Arrondissement)."
+            )
 
+        return self
 
 class PredictionResponse(BaseModel):
     prix_m2: float

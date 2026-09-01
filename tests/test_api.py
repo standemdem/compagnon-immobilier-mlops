@@ -177,3 +177,20 @@ def test_model_info_without_api_key():
     )
 
     assert response.status_code == 401
+
+def test_predict_paris_scope_rejects_non_paris_commune():
+    response = client.post(
+        "/predict",
+        headers={"x-api-key": API_KEY},
+        json={
+            "scope": "paris",
+            "surface_reelle_bati": 60,
+            "nombre_pieces_principales": 3,
+            "latitude": 43.30,
+            "longitude": 5.37,
+            "has_dependance": False,
+            "nom_commune": "Marseille",
+        },
+    )
+
+    assert response.status_code == 422
