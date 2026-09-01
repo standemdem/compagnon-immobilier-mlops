@@ -194,3 +194,39 @@ def test_predict_paris_scope_rejects_non_paris_commune():
     )
 
     assert response.status_code == 422
+
+def test_predict_paris_scope_rejects_invalid_arrondissement(
+    monkeypatch,
+):
+    model_requested = False
+
+    class FakeModel:
+        def predict(self, input_df):
+            return [10000.0]
+
+    def fake_get_model(scope):
+        nonlocal model_requested
+        model_requested = True
+        return FakeModel()
+
+    monkeypatch.setattr(
+        "app.main.get_model",
+        fake_get_model,
+    )
+
+    response = client.post(
+        "/predict",
+        headers={"x-api-key": API_KEY},
+        json={
+            "scope": "paris",
+            "surface_reelle_bati": 60,
+            "nombre_pieces_principales": 3,
+            "latitude": 48.8566,
+            "longitude": 2.3522,
+            "has_dependance": False,
+            "nom_commune": "Paris 99e Arrondissement",
+        },
+    )
+
+    assert response.status_code == 422
+    assert model_requested is False
