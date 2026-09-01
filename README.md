@@ -9,15 +9,15 @@ architecture reproductible et industrialisable :
 
 -   préparation des données avec des scripts Python ;
 -   pipeline reproductible avec DVC ;
--   entraînement et évaluation d'un modèle de Machine Learning ;
+-   entraînement et évaluation de modèles de Machine Learning ;
 -   suivi des expérimentations avec MLflow ;
--   exposition du modèle via une API FastAPI sécurisée ;
+-   exposition des modèles champions via une API FastAPI sécurisée ;
 -   conteneurisation avec Docker ;
 -   reverse proxy Nginx ;
 -   orchestration avec Airflow ;
 -   supervision avec Prometheus et Grafana.
 
->> **Statut : architecture MLOps fonctionnelle**
+> **Statut : architecture MLOps fonctionnelle**
 >
 > Le projet dispose d'une chaîne MLOps complète intégrant le versionnement
 > des données, l'expérimentation, le Model Registry, le serving multi-modèles,
@@ -32,20 +32,22 @@ architecture reproductible et industrialisable :
 
 ## Sommaire
 
+- [Objectifs](#-objectifs)
+- [Données](#-données)
 - [Architecture](#️-architecture)
-- [Workflow MLOps](#-workflow-mlops)
-- [Services exposés](#-services-exposés)
+- [Structure du projet](#-structure-du-projet)
 - [Pipeline DVC](#-pipeline-dvc)
-- [DVC](#️-dvc)
 - [Modélisation](#-modélisation)
+- [DVC](#️-dvc)
 - [MLflow](#-mlflow)
+- [Workflow MLOps](#-workflow-mlops)
 - [FastAPI](#-fastapi)
 - [Docker et Nginx](#-docker-et-nginx)
 - [Airflow](#️-airflow)
 - [Prometheus et Grafana](#-prometheus-et-grafana)
+- [Services exposés](#-services-exposés)
 - [Installation et configuration](#️-installation-et-configuration)
 - [Intégration continue](#-intégration-continue)
-- [Structure du projet](#-structure-du-projet)
 - [Roadmap](#️-roadmap)
 
 ------------------------------------------------------------------------
@@ -58,10 +60,10 @@ permettant de :
 1.  récupérer et préparer les données DVF ;
 2.  appliquer automatiquement les règles de nettoyage métier ;
 3.  construire un dataset destiné au Machine Learning ;
-4.  entraîner et évaluer un modèle de prédiction du prix au m² ;
+4.  entraîner et évaluer des modèles de prédiction du prix au m² ;
 5.  versionner les données et les artefacts du modèle ;
 6.  suivre les expérimentations ;
-7.  exposer le modèle via une API REST sécurisée ;
+7.  exposer les modèles champions via une API REST sécurisée ;
 8.  conteneuriser les différents composants ;
 9.  orchestrer le pipeline ;
 10. superviser l'API.
@@ -290,8 +292,10 @@ dvf_appartements_   dvf_appartements_
 model_base_france_  model_base_paris_
 2020_2024           2020_2024
 .parquet.gz          .parquet.gz
-          │             │
           └──────┬──────┘
+                 │
+                 ▼
+        sélection par scope
                  │
                  ▼
                train
@@ -446,9 +450,10 @@ Performances sur le jeu de test 2024 :
 | R² | 0,1407 |
 
 Ces performances, sensiblement inférieures à celles du modèle France,
-illustrent également l'intérêt de conserver des modèles distincts selon
-le périmètre géographique et de comparer les expérimentations avant toute
-promotion en production.
+montrent que le périmètre parisien constitue un problème de prédiction
+plus difficile avec les features actuellement disponibles. Elles justifient
+également le suivi séparé des expérimentations et des performances pour
+chaque périmètre géographique.
 
 ## Artefacts DVC
 
