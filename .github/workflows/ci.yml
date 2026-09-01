@@ -25,6 +25,8 @@ jobs:
           API_KEY=${API_KEY}
           AIRFLOW_UID=1000
           DOCKER_GID=999
+          DVC_UID=1000
+          DVC_GID=1000
           EOF
 
       - name: Construction de l'image de tests
