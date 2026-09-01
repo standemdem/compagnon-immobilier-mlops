@@ -496,19 +496,23 @@ cryptography    43.0.3
 asyncssh        2.21.1
 ```
 
-La configuration commune est dans `.dvc/config`.
+La configuration commune du remote DVC est versionnée dans :
 
-Les credentials OAuth restent locaux dans :
-
-``` text
-.dvc/config.local
+```text
+.dvc/config
 ```
 
-Le cache OAuth PyDrive2 est conservé dans :
+Elle définit le remote Google Drive utilisé par le projet.
 
-``` text
+L'authentification Google Drive est réalisée localement via PyDrive2.
+Le cache d'authentification est conservé sur la machine hôte dans :
+
+```text
 ~/.cache/pydrive2fs/
 ```
+
+Ce répertoire est monté dans les conteneurs DVC afin de leur permettre
+d'accéder au remote sans versionner les informations d'authentification.
 
 Commandes principales :
 
@@ -517,6 +521,7 @@ docker exec compagnon_dvc dvc status
 docker exec compagnon_dvc dvc status -c
 docker exec compagnon_dvc dvc pull
 docker exec compagnon_dvc dvc repro
+docker exec compagnon_dvc dvc repro --single-item train
 docker exec compagnon_dvc dvc push
 ```
 
