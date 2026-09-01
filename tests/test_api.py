@@ -170,3 +170,10 @@ def test_model_info_with_invalid_scope():
     )
 
     assert response.status_code == 422
+
+def test_model_info_without_api_key():
+    response = client.get(
+        "/model/info?scope=france"
+    )
+
+    assert response.status_code == 401
