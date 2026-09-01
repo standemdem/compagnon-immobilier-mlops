@@ -151,3 +151,19 @@ def test_clean_apartment_sales_end_to_end():
     assert bool(m4["has_dependance"]) is False
     assert bool(m4["has_nan_type_local"]) is True
     assert m4["surface_terrain_total"] == 15.0
+
+def test_filter_allowed_property_types_excludes_all_null_mutation():
+    df = pd.DataFrame(
+        {
+            "id_mutation": ["m1", "m1", "m2"],
+            "type_local": [
+                None,
+                None,
+                "Appartement",
+            ],
+        }
+    )
+
+    result = filter_allowed_property_types(df)
+
+    assert set(result["id_mutation"]) == {"m2"}

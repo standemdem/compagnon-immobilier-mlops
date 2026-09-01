@@ -56,8 +56,11 @@ def filter_allowed_property_types(
     valid_mutation_ids = (
         df.groupby("id_mutation")["type_local"]
         .apply(
-            lambda values: set(values.dropna()).issubset(
-                ALLOWED_PROPERTY_TYPES
+            lambda values: (
+                len(values.dropna()) > 0
+                and set(values.dropna()).issubset(
+                    ALLOWED_PROPERTY_TYPES
+                )
             )
         )
     )
