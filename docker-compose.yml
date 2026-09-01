@@ -229,6 +229,7 @@ services:
         - ./tests:/app/tests:ro
         - ./app:/app/app:ro
         - ./src:/app/src:ro
+        - ./scripts:/app/scripts:ro
 
       profiles:
         - test

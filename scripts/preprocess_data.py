@@ -15,6 +15,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--year",
         type=int,
+        choices=range(2020, 2025),
         required=True,
         help="Année DVF à traiter, par exemple 2020.",
     )
