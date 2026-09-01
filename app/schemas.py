@@ -1,3 +1,7 @@
+import json
+from pathlib import Path
+
+from shapely.geometry import Point, shape
 from pydantic import BaseModel, Field, model_validator
 from typing import Literal
 
@@ -23,6 +27,31 @@ PARIS_ARRONDISSEMENTS = {
     "Paris 19e Arrondissement",
     "Paris 20e Arrondissement",
 }
+GEOJSON_PATH = Path(__file__).parent / "data" / "arrondissements.geojson"
+
+with GEOJSON_PATH.open("r", encoding="utf-8") as file:
+    PARIS_GEOJSON = json.load(file)
+
+
+def find_paris_arrondissement(
+    latitude: float,
+    longitude: float,
+) -> str | None:
+    point = Point(longitude, latitude)
+
+    for feature in PARIS_GEOJSON["features"]:
+        polygon = shape(feature["geometry"])
+
+        if polygon.covers(point):
+            number = int(feature["properties"]["c_ar"])
+
+            if number == 1:
+                return "Paris 1er Arrondissement"
+
+            return f"Paris {number}e Arrondissement"
+
+    return None
+
 class PredictionRequest(BaseModel):
     scope: Literal["france", "paris"] = Field(
     description="Périmètre du modèle utilisé pour la prédiction.",
@@ -61,13 +90,22 @@ class PredictionRequest(BaseModel):
 
     @model_validator(mode="after")
     def validate_scope_location(self):
-        if (
-            self.scope == "paris"
-            and self.nom_commune not in PARIS_ARRONDISSEMENTS
-        ):
+        if self.scope != "paris":
+            return self
+
+        arrondissement = find_paris_arrondissement(
+            self.latitude,
+            self.longitude,
+        )
+
+        if arrondissement is None:
             raise ValueError(
-                "Le scope 'paris' nécessite un arrondissement "
-                "parisien valide (ex: Paris 4e Arrondissement)."
+                "Les coordonnées doivent être situées dans Paris."
+            )
+
+        if self.nom_commune != arrondissement:
+            raise ValueError(
+                "L'arrondissement ne correspond pas aux coordonnées fournies."
             )
 
         return self

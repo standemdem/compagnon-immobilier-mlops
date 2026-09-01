@@ -31,10 +31,18 @@ services:
     ports:
       - "8080:80"
 
+    env_file:
+      - .env
+
+    environment:
+      NGINX_ENVSUBST_FILTER: "API_KEY"
+      NGINX_ENVSUBST_OUTPUT_DIR: /etc/nginx
+
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/nginx.conf.template:/etc/nginx/templates/nginx.conf.template:ro
       - ./nginx/control:/usr/share/nginx/html/control:ro
       - ./nginx/auth:/etc/nginx/auth:ro
+      - ./nginx/demo:/usr/share/nginx/html/demo:ro
 
     depends_on:
       - api

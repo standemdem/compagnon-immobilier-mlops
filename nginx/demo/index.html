@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Compagnon Immobilier</title>
+
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+</head>
+
+<body>
+
+    <main class="container">
+
+        <header class="hero">
+            <h1>Compagnon Immobilier</h1>
+
+            <p>
+                Estimez le prix au m² d'un appartement parisien.
+            </p>
+        </header>
+
+        <section class="estimator">
+
+            <div class="map-section">
+                <h2>1. Localisez le bien</h2>
+
+                <p>
+                    Cliquez sur la carte pour sélectionner
+                    l'emplacement de l'appartement.
+                </p>
+
+                <div id="map"></div>
+
+                <div class="location-info">
+                    <p>
+                        <strong>Arrondissement :</strong>
+                        <span id="arrondissement">
+                            Aucun emplacement sélectionné
+                        </span>
+                    </p>
+
+                    <p>
+                        <strong>Latitude :</strong>
+                        <span id="latitude">-</span>
+                    </p>
+
+                    <p>
+                        <strong>Longitude :</strong>
+                        <span id="longitude">-</span>
+                    </p>
+                </div>
+            </div>
+
+            <div class="form-section">
+
+                <h2>2. Décrivez le bien</h2>
+
+                <form id="prediction-form">
+
+                    <label for="surface">
+                        Surface habitable
+                    </label>
+
+                    <div class="input-with-unit">
+                        <input
+                            id="surface"
+                            name="surface"
+                            type="number"
+                            min="1"
+                            step="0.1"
+                            placeholder="55"
+                            required
+                        >
+
+                        <span>m²</span>
+                    </div>
+
+                    <label for="pieces">
+                        Nombre de pièces principales
+                    </label>
+
+                    <input
+                        id="pieces"
+                        name="pieces"
+                        type="number"
+                        min="1"
+                        step="1"
+                        placeholder="3"
+                        required
+                    >
+
+                    <label for="dependance">
+                        Dépendance
+                    </label>
+
+                    <select
+                        id="dependance"
+                        name="dependance"
+                    >
+                        <option value="false">
+                            Non
+                        </option>
+
+                        <option value="true">
+                            Oui
+                        </option>
+                    </select>
+
+                    <button type="submit">
+                        Estimer
+                    </button>
+
+                </form>
+
+                <div
+                    id="result"
+                    class="result hidden"
+                >
+                    <p>Prix estimé</p>
+
+                    <strong id="prediction-value">
+                        -
+                    </strong>
+
+                    <span>€/m²</span>
+                </div>
+
+                <p
+                    id="error-message"
+                    class="error hidden"
+                ></p>
+
+            </div>
+
+        </section>
+
+    </main>
+
+    <script
+        src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    ></script>
+    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@7/turf.min.js"></script>
+
+    <script src="app.js"></script>
+    <script src="app.js"></script>
+
+</body>
+</html>
