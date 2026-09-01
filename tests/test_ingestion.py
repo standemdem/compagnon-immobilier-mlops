@@ -1,6 +1,6 @@
+import pytest
 from pathlib import Path
 from unittest.mock import Mock, patch
-
 from compagnon_immo.data.ingestion import download_file
 
 
@@ -27,3 +27,31 @@ def test_download_file_uses_http_timeout(tmp_path):
         stream=True,
         timeout=60,
     )
+
+def test_download_file_removes_partial_file_on_error(tmp_path):
+    destination = tmp_path / "test.csv.gz"
+    temporary_path = tmp_path / "test.csv.gz.part"
+
+    response = Mock()
+    response.__enter__ = Mock(return_value=response)
+    response.__exit__ = Mock(return_value=False)
+    response.raise_for_status = Mock()
+
+    def failing_chunks(chunk_size):
+        yield b"partial-data"
+        raise RuntimeError("download interrupted")
+
+    response.iter_content.side_effect = failing_chunks
+
+    with patch(
+        "compagnon_immo.data.ingestion.requests.get",
+        return_value=response,
+    ):
+        with pytest.raises(RuntimeError, match="download interrupted"):
+            download_file(
+                "https://example.com/test.csv.gz",
+                destination,
+            )
+
+    assert not destination.exists()
+    assert not temporary_path.exists()

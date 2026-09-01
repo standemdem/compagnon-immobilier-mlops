@@ -13,12 +13,27 @@ def download_file(url: str, destination: Path) -> Path:
         print(f"✅ File already exists: {destination}")
         return destination
     
-    with requests.get(url, stream=True, timeout=60) as response:
-        response.raise_for_status()
-        
-        with open(destination, 'wb') as file:
-            for chunk in response.iter_content(chunk_size=8192):
-                file.write(chunk)
+    temporary_path = destination.with_suffix(
+        destination.suffix + ".part"
+    )
+
+    try:
+        with requests.get(
+            url,
+            stream=True,
+            timeout=60,
+        ) as response:
+            response.raise_for_status()
+
+            with open(temporary_path, "wb") as file:
+                for chunk in response.iter_content(chunk_size=8192):
+                    file.write(chunk)
+
+        temporary_path.replace(destination)
+
+    except Exception:
+        temporary_path.unlink(missing_ok=True)
+        raise
 
     print(f"⬇️ Downloaded: {destination}")
     return destination
