@@ -87,6 +87,11 @@ def compute_target_bounds(
             "La colonne 'prix_m2' est absente du train."
         )
 
+    if train_df["prix_m2"].dropna().empty:
+        raise ValueError(
+            "La colonne 'prix_m2' ne contient aucune valeur exploitable."
+        )
+
     if not 0 <= lower_quantile < upper_quantile <= 1:
         raise ValueError(
             "Les quantiles doivent vérifier : "

@@ -7,6 +7,8 @@ from sklearn.ensemble import (
 
 from compagnon_immo.models.train import (
     build_model_pipeline,
+    compute_target_bounds,
+    temporal_train_test_split,
 )
 
 
@@ -61,11 +63,6 @@ def test_build_pipeline_with_unknown_model():
             model_params={},
             scope="france"
         )
-
-import pandas as pd
-
-from compagnon_immo.models.train import build_model_pipeline
-
 
 def test_random_forest_pipeline_paris():
     X = pd.DataFrame({
@@ -139,3 +136,147 @@ def test_hist_gradient_boosting_pipeline_paris():
     predictions = pipeline.predict(X)
 
     assert len(predictions) == len(X)
+
+def test_compute_target_bounds_rejects_empty_target():
+    df = pd.DataFrame(
+        {
+            "prix_m2": [None, None],
+        }
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="aucune valeur exploitable",
+    ):
+        compute_target_bounds(df)
+
+def test_temporal_train_test_split():
+    df = pd.DataFrame(
+        {
+            "annee_mutation": [2020, 2021, 2023, 2024, 2024],
+            "prix_m2": [1000, 1100, 1200, 1300, 1400],
+        }
+    )
+
+    train, test = temporal_train_test_split(
+        df,
+        test_year=2024,
+    )
+
+    assert set(train["annee_mutation"]) == {
+        2020,
+        2021,
+        2023,
+    }
+
+    assert set(test["annee_mutation"]) == {
+        2024,
+    }
+
+    assert len(train) == 3
+    assert len(test) == 2
+
+def test_temporal_train_test_split_rejects_missing_test_year():
+    df = pd.DataFrame(
+        {
+            "annee_mutation": [2020, 2021, 2022, 2023],
+            "prix_m2": [1000, 1100, 1200, 1300],
+        }
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="Aucune observation trouvée pour 2024",
+    ):
+        temporal_train_test_split(
+            df,
+            test_year=2024,
+        )
+
+def test_random_forest_pipeline_france_fit_predict():
+    X = pd.DataFrame(
+        {
+            "surface_reelle_bati": [40, 50, 60, 70],
+            "nombre_pieces_principales": [2, 2, 3, 4],
+            "latitude": [48.85, 48.86, 45.75, 43.30],
+            "longitude": [2.35, 2.36, 4.85, 5.37],
+            "has_dependance": [0, 1, 0, 1],
+            "nom_commune": [
+                "Paris",
+                "Paris",
+                "Lyon",
+                "Marseille",
+            ],
+        }
+    )
+
+    y = [9000, 9500, 4500, 4000]
+
+    pipeline = build_model_pipeline(
+        model_type="random_forest",
+        model_params={
+            "n_estimators": 2,
+            "random_state": 42,
+            "n_jobs": 1,
+        },
+        scope="france",
+    )
+
+    pipeline.fit(X, y)
+
+    predictions = pipeline.predict(X)
+
+    assert len(predictions) == len(X)
+
+def test_hist_gradient_boosting_pipeline_france_fit_predict():
+    X = pd.DataFrame(
+        {
+            "surface_reelle_bati": [40, 50, 60, 70, 80, 90],
+            "nombre_pieces_principales": [2, 2, 3, 4, 4, 5],
+            "latitude": [48.85, 48.86, 45.75, 43.30, 44.84, 47.22],
+            "longitude": [2.35, 2.36, 4.85, 5.37, -0.58, -1.55],
+            "has_dependance": [0, 1, 0, 1, 0, 1],
+            "nom_commune": [
+                "Paris",
+                "Paris",
+                "Lyon",
+                "Marseille",
+                "Bordeaux",
+                "Nantes",
+            ],
+        }
+    )
+
+    y = [9000, 9500, 4500, 4000, 5000, 4200]
+
+    pipeline = build_model_pipeline(
+        model_type="hist_gradient_boosting",
+        model_params={
+            "max_iter": 5,
+            "learning_rate": 0.1,
+            "max_depth": 3,
+            "min_samples_leaf": 2,
+            "random_state": 42,
+        },
+        scope="france",
+    )
+
+    pipeline.fit(X, y)
+
+    predictions = pipeline.predict(X)
+
+    assert len(predictions) == len(X)
+
+def test_build_pipeline_with_unknown_scope():
+    with pytest.raises(
+        ValueError,
+        match="Scope non supporté : europe",
+    ):
+        build_model_pipeline(
+            model_type="random_forest",
+            model_params={
+                "n_estimators": 2,
+                "random_state": 42,
+            },
+            scope="europe",
+        )

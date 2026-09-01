@@ -218,20 +218,20 @@ stages:
       size: 1810572
     - path: scripts/train_model.py
       hash: md5
-      md5: 8620312ac3b56f411409b1b350eafd5c
-      size: 9275
+      md5: f4f51430a6f2ff8648a333c3ffc26027
+      size: 9277
     - path: src/compagnon_immo/models/evaluate.py
       hash: md5
       md5: 8bed8a77dc081231973a372a8cb16079
       size: 629
     - path: src/compagnon_immo/models/train.py
       hash: md5
-      md5: bbebb91d17afa00664dae78bded8c205
-      size: 6814
+      md5: d71fb39bd55130b0486495e044b2173b
+      size: 6968
     - path: src/compagnon_immo/models/transformers.py
       hash: md5
-      md5: 4fca4ba79b07a98f0b210a56e730be01
-      size: 2348
+      md5: 432d8998a37c76723cb197a19025113c
+      size: 2519
     params:
       params.yaml:
         model:

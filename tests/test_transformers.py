@@ -6,7 +6,7 @@ from compagnon_immo.models.transformers import (
     FeatureSelector,
 )
 
-# Tests de CommuneSalesEncode
+# Tests de CommuneSalesEncoder
 
 def test_commune_sales_encoder_fit_transform():
     df = pd.DataFrame(
@@ -68,31 +68,6 @@ def test_commune_sales_encoder_unknown_commune():
 
     assert result.loc[1, "nb_ventes_commune"] == expected_fallback
 
-def test_feature_selector_selects_expected_columns():
-    df = pd.DataFrame(
-        {
-            "surface_reelle_bati": [50, 70],
-            "latitude": [48.85, 45.75],
-            "longitude": [2.35, 4.85],
-            "colonne_inutile": [100, 200],
-        }
-    )
-
-    features = [
-        "surface_reelle_bati",
-        "latitude",
-        "longitude",
-    ]
-
-    selector = FeatureSelector(features=features)
-
-    result = selector.fit_transform(df)
-
-    assert list(result.columns) == features
-    assert "colonne_inutile" not in result.columns
-    assert len(result) == 2
-
-
 # Test de FeatureSelector
 
 def test_feature_selector_selects_expected_columns():
@@ -138,3 +113,18 @@ def test_feature_selector_missing_column():
 
     with pytest.raises(ValueError, match="longitude"):
         selector.fit(df)
+
+def test_commune_sales_encoder_rejects_empty_commune():
+    X = pd.DataFrame(
+        {
+            "nom_commune": [None, None],
+        }
+    )
+
+    encoder = CommuneSalesEncoder()
+
+    with pytest.raises(
+        ValueError,
+        match="aucune valeur exploitable",
+    ):
+        encoder.fit(X)

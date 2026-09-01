@@ -21,6 +21,11 @@ class CommuneSalesEncoder(BaseEstimator, TransformerMixin):
                 "La colonne 'nom_commune' est absente."
             )
 
+        if X["nom_commune"].dropna().empty:
+            raise ValueError(
+                "La colonne 'nom_commune' ne contient aucune valeur exploitable."
+            )
+
         counts = X.groupby("nom_commune").size()
 
         self.commune_counts_ = counts
