@@ -726,7 +726,7 @@ Pour le scope Paris, `nom_commune` correspond à l'un des
 ## Informations sur le modèle
 
 L'endpoint `/model/info` interroge le MLflow Model Registry afin de retourner
-les informations relatives au champion du scope demandé.
+les informations relatives au champion du scope demandé .
 
 Le scope France est utilisé par défaut :
 
